@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Intentive</string>
+    <string name="intents">Intents</string>
+    <string name="add_intent">Add Intent</string>
+    <string name="edit_intent">Edit Intent</string>
+</resources>
