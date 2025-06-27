@@ -14,7 +14,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from transformers import BertTokenizer, BertModel
 from torch.utils.data import Dataset
-from models.input_classifier_v1 import text_to_bert_tokens
+from input_classifier_v1 import text_to_bert_tokens
+import torch.nn.functional as F
+from torch import sigmoid
+from sklearn.metrics import classification_report
+from tqdm import tqdm
+
 
 # --- Dataset wrapper ---
 class EmotionalIntentDataset(Dataset):
@@ -31,21 +36,21 @@ class EmotionalIntentDataset(Dataset):
 
 # --- Core classifier ---
 class EmotionalClassifier(nn.Module):
-    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int):
+    def __init__(self, input_dim, hidden_dim, output_dim):
         super(EmotionalClassifier, self).__init__()
         self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.relu = nn.ReLU()
+        self.bn1 = nn.BatchNorm1d(hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim // 2)
+        self.bn2 = nn.BatchNorm1d(hidden_dim // 2)
         self.dropout = nn.Dropout(0.3)
-        self.fc2 = nn.Linear(hidden_dim, output_dim)
-        self.sigmoid = nn.Sigmoid()
+        self.output = nn.Linear(hidden_dim // 2, output_dim)
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.dropout(x)
-        x = self.fc2(x)
-        return self.sigmoid(x)
+        x = self.dropout(F.relu(self.bn1(self.fc1(x))))
+        x = self.dropout(F.relu(self.bn2(self.fc2(x))))
+        return self.output(x)
 
+    
     def save(self, path: str):
         torch.save(self.state_dict(), path)
 
@@ -66,7 +71,7 @@ class EmotionAnalyzer:
         self.mlb = MultiLabelBinarizer()
         self.model = None
 
-    def train(self, texts: list[str], label_lists: list[list[str]], epochs: int = 5, batch_size: int = 32, lr: float = 0.001):
+    def train(self, texts: list[str], label_lists: list[list[str]], epochs: int = 10000, batch_size: int = 32, lr: float = 0.001):
         Y = self.mlb.fit_transform(label_lists)
         classes = list(self.mlb.classes_)
         print(f"Detected emotion classes: {classes}")
@@ -83,33 +88,46 @@ class EmotionAnalyzer:
         test_loader  = torch.utils.data.DataLoader(test_ds, batch_size=batch_size)
 
         self.model = EmotionalClassifier(input_dim=self.input_dim, hidden_dim=self.hidden_dim, output_dim=len(classes))
-        criterion = nn.BCELoss()
+        criterion = nn.BCEWithLogitsLoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
 
-        self.model.train()
         for epoch in range(epochs):
+            self.model.train()
             total_loss = 0.0
-            for batch_X, batch_y in train_loader:
+            print(f"\n--- Epoch {epoch+1}/{epochs} ---")
+            for batch_X, batch_y in tqdm(train_loader, desc=f"Training Epoch {epoch+1}"):
                 optimizer.zero_grad()
                 preds = self.model(batch_X)
                 loss = criterion(preds, batch_y)
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item()
-            print(f"Epoch {epoch+1}/{epochs} - Loss: {total_loss:.4f}")
+            
+            print(f"Epoch {epoch+1} Loss: {total_loss:.4f}")
+            self.evaluate(test_loader, label_names=classes)
+        return X_test, Y_test
 
-        self.model.eval()
+    def evaluate(self, test_loader, label_names=None):
+        if self.model is None:
+            raise RuntimeError("Model has not been trained or loaded.")
+        if label_names is None:
+            label_names = self.mlb.classes_
+
         all_preds, all_targets = [], []
+        self.model.eval()
         with torch.no_grad():
             for batch_X, batch_y in test_loader:
-                probs = self.model(batch_X).cpu().numpy()
+                logits = self.model(batch_X)
+                probs = sigmoid(logits).cpu().numpy()
                 all_preds.append(probs)
                 all_targets.append(batch_y.cpu().numpy())
+
         all_preds = np.vstack(all_preds)
         all_targets = np.vstack(all_targets)
-        bin_preds = (all_preds > 0.50).astype(int)
-        print("\nClassification Report:")
-        print(classification_report(all_targets, bin_preds, target_names=classes, zero_division=0))
+        bin_preds = (all_preds > 0.5).astype(int)
+
+        print("\nEvaluation Report:")
+        print(classification_report(all_targets, bin_preds, target_names=label_names, zero_division=0))
 
     def predict(self, texts: list[str], threshold: float = 0.1) -> list[str]:
         if self.model is None:
@@ -172,26 +190,50 @@ def parse_labeled_text_file(filepath, label_map):
 # --- Script entry point ---
 def main():
     print("Downloading training file 1 . . .")
-    training_filepath1 = "C:/Users/trist/OneDrive/Productivity App/Input Classification/archive/training.csv"
+    training_filepath1 = "C:\\Users\\trist\\OneDrive\\productivity_app\\models\\data\\emotions(1).csv"
     df1 = pd.read_csv(training_filepath1)
     df1['labels'] = df1['labels'].map({0: 'sadness', 1: 'joy', 2: 'love', 3: 'anger', 4: 'fear'})
     df1['labels_list'] = df1['labels'].apply(lambda x: [x])
     print("Loaded training file 1.")
 
     print("Downloading training file 2 . . .")
-    training_filepath2 = "C:/Users/trist/OneDrive/Productivity App/Input Classification/tweet_emotions.csv"
+    training_filepath2 = "C:/Users/trist/OneDrive/productivity_app/models/data/tweet_emotions(2).csv"
     df2 = pd.read_csv(training_filepath2)
     df2['labels_list'] = df2['labels'].apply(lambda x: [x])
     print("Loaded training file 2.")
 
     print("Downloading training file 3 . . .")
-    training_filepath3 = "C:/Users/trist/OneDrive/Productivity App/Input Classification/text.txt"
+    training_filepath3 = "C:/Users/trist/OneDrive/productivity_app/models/data/text(3).txt"
     label_map = {0: 'joy', 1: 'fear', 2: 'anger', 3: 'sadness', 4: 'disgust', 5: 'shame', 6: 'guilt'}
     df3 = parse_labeled_text_file(training_filepath3, label_map)
     print("Loaded training file 3.")
 
+    print("Downloading training file 4 . . .")
+    training_filepath4 = "C:/Users/trist/OneDrive/productivity_app/models/data/Combined_Data(4).csv"
+    df4 = pd.read_csv(training_filepath4)
+    df4['labels_list'] = df4['labels'].apply(lambda x: [x])
+    print("Loaded training file 4.")
+
+    print("Downloading training file 5 . . .")
+    training_filepath5 = "C:/Users/trist/OneDrive/productivity_app/models/data/combined_emotion(5).csv"
+    df5 = pd.read_csv(training_filepath5)
+    df5['labels_list'] = df5['labels'].apply(lambda x: [x])
+    print("Loaded training file 5.")
+
+    print("Downloading training file 6 . . .")
+    training_filepath6 = "C:/Users/trist/OneDrive/productivity_app/models/data/combined_sentiment_data(6).csv"
+    df6 = pd.read_csv(training_filepath6)
+    df6['labels_list'] = df6['labels'].apply(lambda x: [x])
+    print("Loaded training file 6.")
+
+    print("Downloading training file 7 . . .")
+    training_filepath7 = "C:/Users/trist/OneDrive/productivity_app/models/data/emotion_dataset_raw(7).csv"
+    df7 = pd.read_csv(training_filepath7)
+    df7['labels_list'] = df7['labels'].apply(lambda x: [x])
+    print("Loaded training file 7.")
+
     print("Combining Files . . .")
-    df = pd.concat([df1[['input_text', 'labels_list']], df2[['input_text', 'labels_list']], df3], ignore_index=True)
+    df = pd.concat([df1[['input_text', 'labels_list']], df2[['input_text', 'labels_list']], df3[['input_text', 'labels_list']], df4[['input_text', 'labels_list']], df5[['input_text', 'labels_list']], df6[['input_text', 'labels_list']], df7[['input_text', 'labels_list']]], ignore_index=True)
     df['labels_list'] = df['labels_list'].apply(lambda labels: [str(label) for label in labels])
 
     print("Files combined.")
@@ -199,10 +241,13 @@ def main():
     print("Loading Model . . .")
     analyzer = EmotionAnalyzer()
     print("Training Model  . . .")
-    analyzer.train(df['input_text'].tolist(), df['labels_list'].tolist(), epochs=5)
+    X_test, Y_test = analyzer.train(df['input_text'].tolist(), df['labels_list'].tolist(), epochs=1000)
     print("Saving Model . . .")
     analyzer.save('emotion_model.pth', 'emotion_classes.json')
     print("Model Saved.")
+    print("Evaluating Model . . .")
+    analyzer.evaluate(X_test, Y_test)
+    print("Model Evaluated.")
 
 if __name__ == "__main__":
     main()
