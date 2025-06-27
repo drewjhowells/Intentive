@@ -1,0 +1,669 @@
+input_text,labels, source
+I want to start meditating every morning.,goal_create, generated
+I've been consistent this week but I feel tired.,user_status;user_energy;reflection, generated
+This goal isn’t working for me anymore.,goal_modify;reflection;struggle, generated
+I walked every day this week!,user_status;celebration;positive, generated
+I’m failing and don’t know what to change.,goal_modify;struggle;negative, generated
+Can you help me revise this goal?,goal_modify;instruction_request, generated
+I don’t like the way this goal is phrased.,goal_modify;feedback_ai, generated
+Please stop sending me reminders.,system_command, generated
+I didn’t do it today… again.,user_status;reflection;struggle;negative, generated
+I’m really proud of how I handled this week.,reflection;celebration;positive, generated
+I finally hit my step goal today!,celebration,generated
+Woohoo! I meditated every day this week.,celebration,generated
+Feeling proud—I stuck with my reading habit!,celebration,generated
+I just finished my 30-day challenge!,celebration,generated
+Best day ever—my habit streak is alive!,celebration,generated
+I wish the app could give more personalized advice.,feedback_ai,generated
+"The reminders are helpful, but a bit too frequent.",feedback_ai,generated
+Great suggestions lately—thank you!,feedback_ai,generated
+Noticed the AI gives better tips when I'm more specific.,feedback_ai,generated
+Can you adjust how often you check in with me?,feedback_ai,generated
+I want to start exercising three times a week.,goal_create,generated
+Set a new goal for waking up earlier.,goal_create,generated
+Let’s track my water intake every day.,goal_create,generated
+Add a goal to journal every night.,goal_create,generated
+I need to create a budget this month.,goal_create,generated
+Change my goal to 4 workouts a week instead of 3.,goal_modify,generated
+Let’s switch my evening routine to mornings.,goal_modify,generated
+I want to shift my focus to cardio now.,goal_modify,generated
+Update my study time to 6 PM.,goal_modify,generated
+Modify my screen time goal to under 3 hours.,goal_modify,generated
+How do I update a goal?,instruction_request,generated
+Can you help me reflect on this week?,instruction_request,generated
+What’s the best way to build a habit?,instruction_request,generated
+How do I reset progress on a goal?,instruction_request,generated
+Give me some tips for staying motivated.,instruction_request,generated
+I didn’t meet any of my goals today.,negative,generated
+Feeling really down about my progress.,negative,generated
+This isn't working for me.,negative,generated
+I feel like giving up.,negative,generated
+I failed again.,negative,generated
+Feeling great about how things are going!,positive,generated
+I'm doing awesome lately.,positive,generated
+Loving this progress.,positive,generated
+I’m actually proud of myself today.,positive,generated
+I’m killing it!,positive,generated
+I noticed I’m more productive when I plan ahead.,reflection,generated
+It’s been tough staying consistent this week.,reflection,generated
+I learned that breaks really help me refocus.,reflection,generated
+I tend to avoid tasks that feel too big.,reflection,generated
+I’m seeing patterns in my procrastination.,reflection,generated
+I keep missing my meditation sessions.,struggle,generated
+I can’t seem to get up early.,struggle,generated
+Still struggling to focus at night.,struggle,generated
+It's hard to stay motivated after work.,struggle,generated
+I get distracted way too easily.,struggle,generated
+Delete my goal.,system_command,generated
+Reset everything.,system_command,generated
+Show me my progress.,system_command,generated
+Pause notifications.,system_command,generated
+Sync with my calendar.,system_command,generated
+I have so much energy today!,user_energy,generated
+Feeling drained right now.,user_energy,generated
+I'm full of focus.,user_energy,generated
+Running on low energy this morning.,user_energy,generated
+Super energized after that walk.,user_energy,generated
+I’m at work right now.,user_status,generated
+Heading to bed soon.,user_status,generated
+Out running errands.,user_status,generated
+Back home for the evening.,user_status,generated
+Just woke up.,user_status,generated
+I finally hit my step goal today!,celebration,generated
+Woohoo! I meditated every day this week.,celebration,generated
+Feeling proud—I stuck with my reading habit!,celebration,generated
+I just finished my 30-day challenge!,celebration,generated
+Best day ever—my habit streak is alive!,celebration,generated
+I wish the app could give more personalized advice.,feedback_ai,generated
+"The reminders are helpful, but a bit too frequent.",feedback_ai,generated
+Great suggestions lately—thank you!,feedback_ai,generated
+Noticed the AI gives better tips when I'm more specific.,feedback_ai,generated
+Can you adjust how often you check in with me?,feedback_ai,generated
+I want to start exercising three times a week.,goal_create,generated
+Set a new goal for waking up earlier.,goal_create,generated
+Let’s track my water intake every day.,goal_create,generated
+Add a goal to journal every night.,goal_create,generated
+I need to create a budget this month.,goal_create,generated
+Change my goal to 4 workouts a week instead of 3.,goal_modify,generated
+Let’s switch my evening routine to mornings.,goal_modify,generated
+I want to shift my focus to cardio now.,goal_modify,generated
+Update my study time to 6 PM.,goal_modify,generated
+Modify my screen time goal to under 3 hours.,goal_modify,generated
+How do I update a goal?,instruction_request,generated
+Can you help me reflect on this week?,instruction_request,generated
+What’s the best way to build a habit?,instruction_request,generated
+How do I reset progress on a goal?,instruction_request,generated
+Give me some tips for staying motivated.,instruction_request,generated
+I didn’t meet any of my goals today.,negative,generated
+Feeling really down about my progress.,negative,generated
+This isn't working for me.,negative,generated
+I feel like giving up.,negative,generated
+I failed again.,negative,generated
+Feeling great about how things are going!,positive,generated
+I'm doing awesome lately.,positive,generated
+Loving this progress.,positive,generated
+I’m actually proud of myself today.,positive,generated
+I’m killing it!,positive,generated
+I noticed I’m more productive when I plan ahead.,reflection,generated
+It’s been tough staying consistent this week.,reflection,generated
+I learned that breaks really help me refocus.,reflection,generated
+I tend to avoid tasks that feel too big.,reflection,generated
+I’m seeing patterns in my procrastination.,reflection,generated
+I keep missing my meditation sessions.,struggle,generated
+I can’t seem to get up early.,struggle,generated
+Still struggling to focus at night.,struggle,generated
+It's hard to stay motivated after work.,struggle,generated
+I get distracted way too easily.,struggle,generated
+Delete my goal.,system_command,generated
+Reset everything.,system_command,generated
+Show me my progress.,system_command,generated
+Pause notifications.,system_command,generated
+Sync with my calendar.,system_command,generated
+I have so much energy today!,user_energy,generated
+Feeling drained right now.,user_energy,generated
+I'm full of focus.,user_energy,generated
+Running on low energy this morning.,user_energy,generated
+Super energized after that walk.,user_energy,generated
+I’m at work right now.,user_status,generated
+Heading to bed soon.,user_status,generated
+Out running errands.,user_status,generated
+Back home for the evening.,user_status,generated
+Just woke up.,user_status,generated
+I’m thrilled I stuck with my plan all week!,celebration,generated
+Hit a huge milestone today—time to celebrate!,celebration,generated
+Crushed my fitness goal this morning!,celebration,generated
+This app really helped me stay on track—so happy!,celebration,generated
+I actually look forward to checking my progress now.,celebration,generated
+Can the app remind me at more consistent times?,feedback_ai,generated
+"Your help was great, but I need simpler tips.",feedback_ai,generated
+App’s been smarter lately—nice job!,feedback_ai,generated
+Could you stop asking the same thing daily?,feedback_ai,generated
+Would love deeper insights into my habits.,feedback_ai,generated
+Add a goal for practicing gratitude each day.,goal_create,generated
+Start a new goal for reading at night.,goal_create,generated
+Let’s add something to help me improve my posture.,goal_create,generated
+Track my caffeine intake every morning.,goal_create,generated
+I’d like to build a better bedtime routine.,goal_create,generated
+Let’s scale back to two workout days this week.,goal_modify,generated
+Change my journaling goal to only weekdays.,goal_modify,generated
+Update my bedtime to 10:30 PM instead of 11.,goal_modify,generated
+Focus on learning Spanish instead of French.,goal_modify,generated
+Switch my walking goal to biking instead.,goal_modify,generated
+What do I do when I fail a goal?,instruction_request,generated
+How can I change a habit?,instruction_request,generated
+Teach me how to stay consistent.,instruction_request,generated
+Where can I check weekly progress?,instruction_request,generated
+How do I reflect on today’s entry?,instruction_request,generated
+I feel stuck and tired of trying.,negative,generated
+Nothing seems to be improving.,negative,generated
+Totally off track this week.,negative,generated
+I feel like I’m going backwards.,negative,generated
+I don’t think I’m making any difference.,negative,generated
+Seeing small wins makes me smile!,positive,generated
+Happy to report I made solid progress.,positive,generated
+I feel more focused each day.,positive,generated
+Great habits are forming slowly but surely.,positive,generated
+I’m on a roll this week.,positive,generated
+My evenings are more peaceful when I plan them.,reflection,generated
+Avoiding social media helped me stay calm today.,reflection,generated
+I noticed my sleep is better with less caffeine.,reflection,generated
+"When I journal, I think more clearly.",reflection,generated
+I often wait too long to ask for help.,reflection,generated
+I skip my goals when I'm stressed.,struggle,generated
+Still can’t stay focused in the afternoons.,struggle,generated
+I keep avoiding this one hard task.,struggle,generated
+Finding time for self-care is tough lately.,struggle,generated
+Late-night scrolling ruins my mornings.,struggle,generated
+Log me out.,system_command,generated
+Update the app settings.,system_command,generated
+Enable goal reminders again.,system_command,generated
+Back up my data.,system_command,generated
+Switch accounts.,system_command,generated
+Exhausted after today’s meetings.,user_energy,generated
+Feeling super productive right now!,user_energy,generated
+I have no motivation today.,user_energy,generated
+Full of creative energy this morning!,user_energy,generated
+Dragging after lunch.,user_energy,generated
+Working from the library today.,user_status,generated
+About to go for a run.,user_status,generated
+Chilling with my dog.,user_status,generated
+Making dinner right now.,user_status,generated
+Taking a quick nap soon.,user_status,generated
+I just reached my goal! This feels amazing!,celebration,generated
+Finally ran 5 miles today. So proud of myself.,celebration,generated
+This is a big win for me! Thanks for all the help.,celebration,generated
+Goal achieved ahead of schedule—let's go!,celebration,generated
+I kept up my habit all week! Woohoo!,celebration,generated
+Can't believe I did it—what a feeling!,celebration,generated
+"Everything's going so well lately, I feel unstoppable!",celebration,generated
+Just got my best productivity streak this month!,celebration,generated
+Celebrating small wins today—every step counts!,celebration,generated
+Hit a new milestone in my journey. Feeling grateful.,celebration,generated
+"I think your advice helped a bit, but it could be more specific.","feedback_ai",generated
+"Can you explain that last suggestion better? It wasn't very clear.","feedback_ai",generated
+"I like how encouraging you are, but I need more action steps.","feedback_ai",generated
+"Your reminders are helpful, but a little too frequent.","feedback_ai",generated
+"You’re doing great, but maybe ask more questions about my goals.","feedback_ai",generated
+"The motivation tips are good! Could you also check in on habits more?","feedback_ai",generated
+"I think your summaries are helpful but sometimes too generic.","feedback_ai",generated
+"You nailed it today! That’s exactly what I needed.","feedback_ai",generated
+"The nudges are a bit overwhelming when I’m busy—maybe fewer during work hours?","feedback_ai",generated
+"I appreciate the help, but I wish the app remembered more of what I’ve said.","feedback_ai",generated
+"I want to start waking up earlier to be more productive.","goal_create",generated
+"Help me set a goal to eat healthier meals during the week.","goal_create",generated
+"I'm ready to begin working out three times a week—can you help me plan it?","goal_create",generated
+"Let’s make a goal to read one book a month.","goal_create",generated
+"I need a new goal for improving my sleep schedule.","goal_create",generated
+"Can we set a goal around reducing my screen time?","goal_create",generated
+"I want to develop a consistent journaling habit—how do I start?","goal_create",generated
+"Help me build a routine to study more effectively this semester.","goal_create",generated
+"I’m looking to create a goal for meditating daily.","goal_create",generated
+"Let’s set a goal to drink more water each day.","goal_create",generated
+"I think my goal to run every day is too much—can we change it to three times a week?","goal_modify",generated
+"Let’s adjust my reading goal to include audiobooks too.","goal_modify",generated
+"I want to shift my focus from weight loss to muscle gain.","goal_modify",generated
+"Can we make my journaling goal more flexible, like three times a week instead of daily?","goal_modify",generated
+"I realized I need to lower the number of hours I planned for studying.","goal_modify",generated
+"Change my workout goal to include yoga instead of just cardio.","goal_modify",generated
+"I want to extend my sleep goal to include weekends too.","goal_modify",generated
+"Let’s tweak my nutrition goal to focus on protein intake.","goal_modify",generated
+"Instead of meditating in the morning, I’d prefer evenings. Can we update that?","goal_modify",generated
+"Update my hydration goal to track cups instead of ounces—it’s easier for me.","goal_modify",generated
+"How do I start building a meditation habit?","instruction_request",generated
+"Can you walk me through how to set up a daily routine?","instruction_request",generated
+"What’s the best way to track my progress on a goal?","instruction_request",generated
+"How do I stay motivated when I'm not seeing results?","instruction_request",generated
+"What are the steps to break a bad habit?","instruction_request",generated
+"Can you show me how to reflect on my week productively?","instruction_request",generated
+"What’s a good way to evaluate if a goal is working for me?","instruction_request",generated
+"I’m not sure how to revise my goals—any advice?","instruction_request",generated
+"How do I make a goal SMART?","instruction_request",generated
+"What should I do if I keep failing the same goal?","instruction_request",generated
+This isn’t working. I feel frustrated and stuck.,negative,generated
+"I’m failing at this again, what's the point?",negative,generated
+I don’t think I’ll ever make progress at this rate.,negative,generated
+I’m really proud of how I handled today!,positive,generated
+This new system is really helping me stay on track.,positive,generated
+I’m feeling so productive lately.,positive,generated
+Making steady progress every day—feels great!,positive,generated
+I hit a milestone! Super happy with how things are going.,positive,generated
+Today was a win. Let’s keep it going.,positive,generated
+"Looking back, I see that skipping breaks leads to burnout.",reflection,generated
+I noticed I’m more focused when I prep the night before.,reflection,generated
+"Reflecting on this week, I’ve realized how important rest is.",reflection,generated
+I tend to lose focus after lunch. Maybe I need a walk then.,reflection,generated
+I learned that setting smaller tasks helped me finish more.,reflection,generated
+I can’t seem to stick with anything lately.,struggle,generated
+It’s hard to stay on top of everything—I’m overwhelmed.,struggle,generated
+Remind me to check in tomorrow at 5pm.,system_command,generated
+Cancel my current goal tracking for this week.,system_command,generated
+Feeling super drained today. Can we take it slow?,user_energy,generated
+I’ve got tons of energy this morning—let’s go big!,user_energy,generated
+Low energy day. Maybe just one small task?,user_energy,generated
+"Exhausted after work, not sure I can do much tonight.",user_energy,generated
+"I’m at work right now, so I can’t respond much.",user_status,generated
+Just got back from a run—feeling good!,user_status,generated
+"Heading out for the weekend, will check in later.",user_status,generated
+Sick today—probably won’t get much done.,user_status,generated
+Just hit my goal today! Feeling amazing!,celebration,generated
+I finally did it—my meditation streak is at 10 days!,celebration,generated
+Guess who crushed their to-do list today?,celebration,generated
+I’m actually proud of myself for staying consistent.,celebration,generated
+My accountability partner said I’m doing great!,celebration,generated
+Can you give me better advice next time?,feedback_ai,generated
+"That prompt felt off, maybe rephrase it?",feedback_ai,generated
+I wish your suggestions were more specific to my goals.,feedback_ai,generated
+Sometimes your nudges don’t fit my day.,feedback_ai,generated
+Please make your tone more encouraging.,feedback_ai,generated
+I want to start running every morning.,goal_create,generated
+Let’s make a new habit: drink water before bed.,goal_create,generated
+I’d like to set a goal around journaling.,goal_create,generated
+Start a goal to wake up before 7am.,goal_create,generated
+I need help defining a new sleep goal.,goal_create,generated
+Let’s make this a weekly instead of daily goal.,goal_modify,generated
+Can I change the time for my reading goal?,goal_modify,generated
+I want to adjust how often I do this habit.,goal_modify,generated
+This goal is too aggressive—tone it down.,goal_modify,generated
+Modify my exercise goal to just 3 days a week.,goal_modify,generated
+How do I improve my focus?,instruction_request,generated
+What’s a good way to track water intake?,instruction_request,generated
+Show me how to update a goal.,instruction_request,generated
+Help me build a morning routine.,instruction_request,generated
+What are smart goal examples?,instruction_request,generated
+I feel so behind today.,negative,generated
+This isn't working—I’m just tired.,negative,generated
+I’m honestly just disappointed in myself.,negative,generated
+Can’t stay focused no matter what I try.,negative,generated
+It’s frustrating to keep failing at this goal.,negative,generated
+Today felt so productive!,positive,generated
+I’m really motivated lately.,positive,generated
+I'm feeling good about this progress.,positive,generated
+This new habit is clicking for me.,positive,generated
+I love how much more energy I have!,positive,generated
+"Looking back, I think I set too many goals.",reflection,generated
+I’ve learned that I need rest to stay motivated.,reflection,generated
+I’m noticing that I do better with routines.,reflection,generated
+Reflecting on my week: sleep was a challenge.,reflection,generated
+This month taught me that I need support.,reflection,generated
+I skipped my habit again.,struggle,generated
+I keep forgetting to log my progress.,struggle,generated
+I’m struggling with this goal lately.,struggle,generated
+Motivation is low and I don’t know why.,struggle,generated
+Why is this so hard to stay consistent with?,struggle,generated
+Remind me tomorrow morning.,system_command,generated
+Turn off notifications for now.,system_command,generated
+Pause this goal for a week.,system_command,generated
+Show me my progress chart.,system_command,generated
+Clear my completed habits list.,system_command,generated
+Feeling super drained today.,user_energy,generated
+I’m full of energy—let’s do something!,user_energy,generated
+I’ve been sluggish all day.,user_energy,generated
+Lots of energy after that nap!,user_energy,generated
+Exhausted from work but want to push through.,user_energy,generated
+I have a headache and need a break.,user_status,generated
+Just finished work and logging in now.,user_status,generated
+"I’m at the gym, can’t talk much.",user_status,generated
+"Heading into a meeting, talk later.",user_status,generated
+"Just got home, ready to check in.",user_status,generated
+I finally reached my weekly goal. Let's go!,celebration,generated
+"That workout was tough, but I finished it!",celebration,generated
+I resisted junk food today. Small win!,celebration,generated
+Got a compliment from my coach!,celebration,generated
+Finished all my tasks ahead of schedule!,celebration,generated
+Productive day! Everything just clicked.,celebration,generated
+Got great feedback at work today!,celebration,generated
+Woke up early and crushed my morning routine.,celebration,generated
+I'm proud of myself for not giving up.,celebration,generated
+Stuck with my plan all week!,celebration,generated
+Can you give me feedback on this goal?,feedback_ai,generated
+What do you think about my progress?,feedback_ai,generated
+Any suggestions to improve my routine?,feedback_ai,generated
+Was this a good way to phrase my goal?,feedback_ai,generated
+Do I need to adjust my approach?,feedback_ai,generated
+"That wasn’t very helpful, can you try again?",feedback_ai,generated
+Can you tell me how I’m doing so far?,feedback_ai,generated
+I'd love a few pointers here.,feedback_ai,generated
+Rate how I'm doing this week?,feedback_ai,generated
+Are there better strategies I could use?,feedback_ai,generated
+I want to meditate 10 minutes daily.,goal_create,generated
+Let’s start a reading habit—15 mins each night.,goal_create,generated
+I'd like to start journaling every morning.,goal_create,generated
+New goal: wake up before 7am every weekday.,goal_create,generated
+Track water intake every day this week.,goal_create,generated
+Set a goal to stretch daily before bed.,goal_create,generated
+Start limiting screen time after 9pm.,goal_create,generated
+Begin gratitude journaling each evening.,goal_create,generated
+Add a goal to walk 3 times per week.,goal_create,generated
+Create a new health goal focused on sleep.,goal_create,generated
+Change goal to 20 minutes of reading instead.,goal_modify,generated
+Let’s update that to 3 workouts instead of 4.,goal_modify,generated
+Adjust goal: focus on posture during work.,goal_modify,generated
+Can we change this to a weekly check-in?,goal_modify,generated
+I want to reduce my daily screen time goal.,goal_modify,generated
+Shift my goal to focus on healthy dinners.,goal_modify,generated
+Make the goal more achievable—every other day.,goal_modify,generated
+Modify the task to be done in mornings.,goal_modify,generated
+Update the goal with more specific milestones.,goal_modify,generated
+Switch focus to self-care Sundays.,goal_modify,generated
+I hit all my goals this week!,celebration,generated
+Just completed my morning run—feels great!,celebration,generated
+Nailed the presentation today!,celebration,generated
+I’ve been consistent for 7 days straight!,celebration,generated
+Got a high five from my coach!,celebration,generated
+Completed a full workout for the first time!,celebration,generated
+I’m finally getting the hang of this!,celebration,generated
+Woke up early and didn’t hit snooze!,celebration,generated
+I made a healthy breakfast!,celebration,generated
+Didn’t procrastinate at all today!,celebration,generated
+All check-ins done—on track!,celebration,generated
+Crushed my productivity block today!,celebration,generated
+My therapist said I’m making real progress!,celebration,generated
+I turned my phone off during work hours!,celebration,generated
+Stayed mindful all afternoon!,celebration,generated
+Your advice yesterday helped me stay focused.,feedback_ai,generated
+Can you help me stick to this habit better?,feedback_ai,generated
+"The motivation boost worked, thanks!",feedback_ai,generated
+I think your reminder came too late.,feedback_ai,generated
+You’ve been really helpful today.,feedback_ai,generated
+Your tone feels a bit pushy.,feedback_ai,generated
+Can you be more gentle in your nudges?,feedback_ai,generated
+Loved the encouragement you gave me yesterday.,feedback_ai,generated
+"You asked me to reflect, and it really helped.",feedback_ai,generated
+Try phrasing that a bit more positively.,feedback_ai,generated
+Could you summarize my progress more clearly?,feedback_ai,generated
+Reminders have been great lately!,feedback_ai,generated
+You’re actually helping me improve!,feedback_ai,generated
+Maybe ease up a bit when I’m tired.,feedback_ai,generated
+I’d love more motivational quotes from you.,feedback_ai,generated
+I want to start journaling each night.,goal_create,generated
+Help me set a goal for getting more sleep.,goal_create,generated
+I’d like to start exercising three times a week.,goal_create,generated
+Can I track how often I meditate?,goal_create,generated
+Make a goal for limiting social media.,goal_create,generated
+I want to be more present with my family.,goal_create,generated
+Set a goal to eat vegetables every day.,goal_create,generated
+Create a goal to wake up by 6 am.,goal_create,generated
+I need a goal for being on time to work.,goal_create,generated
+How about tracking daily water intake?,goal_create,generated
+Make a mindfulness goal for me.,goal_create,generated
+I want to work on staying calm.,goal_create,generated
+Help me make a gratitude journaling goal.,goal_create,generated
+Let’s start a productivity challenge.,goal_create,generated
+Begin a new goal to learn guitar.,goal_create,generated
+Let’s change my goal to only 4 days a week.,goal_modify,generated
+I think this goal is too hard.,goal_modify,generated
+Can we lower the frequency of this goal?,goal_modify,generated
+Change my morning routine goal to start later.,goal_modify,generated
+Update my meditation goal to 10 minutes.,goal_modify,generated
+Modify my goal to be more flexible.,goal_modify,generated
+This isn’t working—change the check-in times.,goal_modify,generated
+Adjust my sleep goal to weekends too.,goal_modify,generated
+Can you make the habit goal more specific?,goal_modify,generated
+I want to pause this goal for now.,goal_modify,generated
+Let’s reduce the daily task list.,goal_modify,generated
+Change the reminder time to evenings.,goal_modify,generated
+Let’s simplify this goal to just one habit.,goal_modify,generated
+Make this goal last for 2 weeks only.,goal_modify,generated
+Can we reset this goal from today?,goal_modify,generated
+Can you help me set a better morning routine?,instruction_request,generated
+What’s a good way to stay on track during finals week?,instruction_request,generated
+Any ideas on how to break a bad habit?,instruction_request,generated
+Could you show me how to reframe this goal?,instruction_request,generated
+How do I stay focused in the evenings?,instruction_request,generated
+Can I get a suggestion for a healthy lunch?,instruction_request,generated
+What’s the best way to track my mood daily?,instruction_request,generated
+How should I revise my goal after a setback?,instruction_request,generated
+Can I make this a habit instead of a to-do?,instruction_request,generated
+What routine would help me sleep better?,instruction_request,generated
+How can I make progress without burning out?,instruction_request,generated
+Any tools you recommend for staying organized?,instruction_request,generated
+Can you break this goal into smaller steps?,instruction_request,generated
+How can I motivate myself when I feel tired?,instruction_request,generated
+What's a good way to review my week?,instruction_request,generated
+I’m really frustrated with how today went.,negative,generated
+This week has been totally off track.,negative,generated
+I don’t feel like I’m making progress.,negative,generated
+"Ugh, I failed again.",negative,generated
+I’m so tired of trying and not changing.,negative,generated
+I just want to give up.,negative,generated
+Why do I keep messing this up?,negative,generated
+"Nothing is working, I feel stuck.",negative,generated
+I forgot again… I’m so unreliable.,negative,generated
+This goal is stressing me out.,negative,generated
+I don’t think I’m capable of doing this.,negative,generated
+Everything feels overwhelming lately.,negative,generated
+My motivation is gone.,negative,generated
+It feels pointless.,negative,generated
+I’m ashamed I didn’t follow through again.,negative,generated
+Feeling proud of my effort today!,positive,generated
+This routine is starting to feel natural.,positive,generated
+I’m excited about this goal again.,positive,generated
+Today went better than expected!,positive,generated
+I'm making real progress.,positive,generated
+This app is actually helping me.,positive,generated
+That workout felt great!,positive,generated
+I’m proud I kept my promise to myself.,positive,generated
+Making progress one step at a time.,positive,generated
+I handled stress better today.,positive,generated
+It’s working!,positive,generated
+Feeling calm and in control.,positive,generated
+I feel good about today’s choices.,positive,generated
+This is becoming a lifestyle.,positive,generated
+I’m on the right path.,positive,generated
+I’ve realized I tend to set goals that are too big and then burn out.,reflection,generated
+"Thinking back, I was more consistent when I had a clear routine.",reflection,generated
+"Reflecting on this week, I avoided the hard stuff again.",reflection,generated
+"I made progress, but I’m not sure if it’s meaningful progress.",reflection,generated
+I learned that I’m more motivated when I get early wins.,reflection,generated
+I keep repeating the same mistakes; maybe I need a different approach.,reflection,generated
+"Looking at my pattern, I work well under pressure but it’s exhausting.",reflection,generated
+I’ve been more mindful of my decisions lately and that feels good.,reflection,generated
+Journaling helps me notice when I’m slipping from my goals.,reflection,generated
+"I keep getting distracted, even though I know better.",reflection,generated
+"This time, I actually followed through – that’s a big deal for me.",reflection,generated
+I noticed I get more done when I take breaks often.,reflection,generated
+"I’ve been avoiding one goal, and I think it’s because I’m scared to fail.",reflection,generated
+"I saw some improvement, but I’m not where I want to be.",reflection,generated
+"Every time I check in, I learn something about myself.",reflection,generated
+I'm feeling overwhelmed and don’t know where to start.,struggle,generated
+I want to give up. I’ve tried so many times.,struggle,generated
+"No matter what I do, I can’t stick to the plan.",struggle,generated
+This is harder than I thought it would be.,struggle,generated
+I didn’t meet any of my goals this week.,struggle,generated
+I’ve had zero motivation all week.,struggle,generated
+Even small tasks feel impossible right now.,struggle,generated
+I keep self-sabotaging even though I want to change.,struggle,generated
+I’m stuck in a loop and don’t know how to break it.,struggle,generated
+"The more I try, the more I feel like I’m failing.",struggle,generated
+I can't seem to focus on anything lately.,struggle,generated
+I skipped all my habits this week.,struggle,generated
+Things felt totally out of control today.,struggle,generated
+It’s discouraging to see no progress after trying so hard.,struggle,generated
+Everything is piling up and I’m mentally drained.,struggle,generated
+Update my goal to 'Run 3 times a week instead of 5.',system_command,generated
+Delete my last check-in.,system_command,generated
+Switch my reminders to 8 PM instead of 7 AM.,system_command,generated
+Set this week’s focus to 'rest and recharge.',system_command,generated
+Change the priority of my goals.,system_command,generated
+Add a new goal: stretch every morning.,system_command,generated
+Edit my goal to remove the deadline.,system_command,generated
+Reset all progress tracking.,system_command,generated
+Turn off notifications on weekends.,system_command,generated
+Pause this goal for now.,system_command,generated
+Switch to dark mode.,system_command,generated
+Enable guided journaling.,system_command,generated
+Delete this goal completely.,system_command,generated
+Move this goal to low priority.,system_command,generated
+Back up my data.,system_command,generated
+I’m super energized and ready to tackle my goals!,user_energy,generated
+I feel exhausted today and need to take it easy.,user_energy,generated
+I’ve had a huge energy boost since yesterday!,user_energy,generated
+Totally wiped out today – I’ll aim low.,user_energy,generated
+Feeling calm and steady. I think I can stay consistent.,user_energy,generated
+"Really sluggish this morning, hoping I perk up later.",user_energy,generated
+I’m hyped! Got so much done already!,user_energy,generated
+"Dragging my feet today, not sure why.",user_energy,generated
+My energy is through the roof after a good night’s sleep.,user_energy,generated
+"It’s one of those 'meh' days – not tired, not driven.",user_energy,generated
+I’ve been bouncing between high and low energy all week.,user_energy,generated
+Feeling heavy but still trying.,user_energy,generated
+So alert today – let’s go!,user_energy,generated
+Not feeling it today but trying to push through.,user_energy,generated
+All I want is a nap today.,user_energy,generated
+I’m feeling pretty motivated today.,user_status,generated
+Not in a great headspace right now.,user_status,generated
+"Doing alright, just keeping pace.",user_status,generated
+"Honestly, I’m doing great this week.",user_status,generated
+"Mentally tired, emotionally okay.",user_status,generated
+My stress levels are high today.,user_status,generated
+Feeling optimistic!,user_status,generated
+Feeling kind of down today.,user_status,generated
+"Emotionally flat, just coasting through.",user_status,generated
+I’m really proud of myself right now.,user_status,generated
+Worried about the week ahead.,user_status,generated
+"Feeling peaceful, no complaints.",user_status,generated
+A little anxious but still productive.,user_status,generated
+"Just meh, not bad, not great.",user_status,generated
+Feeling clear-headed for once.,user_status,generated
+I finally finished my goal today!,celebration,generated
+That was amazing! I did it!,celebration,generated
+Super proud of this moment.,celebration,generated
+"Wow, big win today!",celebration,generated
+So excited to check this off my list.,celebration,generated
+Can't believe I made it this far!,celebration,generated
+Look at me sticking with it!,celebration,generated
+Just hit my streak goal—woohoo!,celebration,generated
+I'm feeling great about this.,celebration,generated
+Celebration time!,celebration,generated
+Can you help me reword this goal?,feedback_ai,generated
+This feedback doesn't seem to match my input.,feedback_ai,generated
+I think the AI misunderstood me.,feedback_ai,generated
+Can you give me suggestions to improve my routine?,feedback_ai,generated
+That wasn’t what I meant—try again.,feedback_ai,generated
+Give me another idea for this goal.,feedback_ai,generated
+Could I get more options?,feedback_ai,generated
+Please rephrase that last recommendation.,feedback_ai,generated
+"Hmm, this isn't very helpful right now.",feedback_ai,generated
+Feedback feels off—can we refine it?,feedback_ai,generated
+I want to start working out daily.,goal_create,generated
+New goal: meditate every morning.,goal_create,generated
+Add a goal to drink more water.,goal_create,generated
+Track my productivity each evening.,goal_create,generated
+Set a goal to journal before bed.,goal_create,generated
+I'm ready to begin a new challenge.,goal_create,generated
+Help me set a 30-day fitness goal.,goal_create,generated
+Let's create a habit for deep work.,goal_create,generated
+Start tracking my study sessions.,goal_create,generated
+Build a morning routine goal.,goal_create,generated
+Can we update my goal to be weekly instead?,goal_modify,generated
+I want to make my goal easier to start.,goal_modify,generated
+Let’s adjust the timing of this goal.,goal_modify,generated
+Change my goal from 5x/week to 3x/week.,goal_modify,generated
+Edit my exercise goal to include weekends.,goal_modify,generated
+Revise my goal to include journaling.,goal_modify,generated
+I want to pause this goal temporarily.,goal_modify,generated
+Update my current focus area.,goal_modify,generated
+Add flexibility to my goal tracking.,goal_modify,generated
+Switch my current goal to a new one.,goal_modify,generated
+How do I add a new goal?,instruction_request,generated
+Can you teach me how to set reminders?,instruction_request,generated
+What are some examples of wellness goals?,instruction_request,generated
+Where do I update my preferences?,instruction_request,generated
+What does the progress bar mean?,instruction_request,generated
+Show me how to change my routine.,instruction_request,generated
+Explain the goal review process.,instruction_request,generated
+Help me with editing my profile.,instruction_request,generated
+Where can I check missed goals?,instruction_request,generated
+Walk me through goal setup again.,instruction_request,generated
+I'm failing at everything lately.,negative,generated
+Nothing is working for me right now.,negative,generated
+I’m really frustrated with myself.,negative,generated
+I can’t stay consistent with anything.,negative,generated
+This app isn’t helping me at all.,negative,generated
+I hate that I keep messing this up.,negative,generated
+Why do I always fail at this?,negative,generated
+I feel like I’m regressing.,negative,generated
+I don’t think I can do this.,negative,generated
+My motivation is completely gone.,negative,generated
+I’m feeling really focused today!,positive,generated
+This app is helping a lot.,positive,generated
+Making great progress so far.,positive,generated
+That last reminder was perfect.,positive,generated
+I’m finally getting the hang of this.,positive,generated
+Feeling optimistic about my new goal.,positive,generated
+That reflection helped a ton.,positive,generated
+Staying on track and it feels good!,positive,generated
+This new schedule works well for me.,positive,generated
+Love how organized I feel now.,positive,generated
+I’ve realized I need more breaks.,reflection,generated
+This week taught me I need structure.,reflection,generated
+I work better when I wake up early.,reflection,generated
+"Looking back, I skipped too many days.",reflection,generated
+I notice my mood affects my habits.,reflection,generated
+Trying to understand why I gave up.,reflection,generated
+This pattern keeps repeating—I need to fix it.,reflection,generated
+I saw a big difference when I planned ahead.,reflection,generated
+Need to reflect on what motivates me.,reflection,generated
+That goal didn’t align with my values.,reflection,generated
+I’m struggling to stay motivated.,struggle,generated
+Too tired to follow through today.,struggle,generated
+It’s hard to balance everything right now.,struggle,generated
+Skipped my goals again.,struggle,generated
+I keep procrastinating on this task.,struggle,generated
+My routine got derailed again.,struggle,generated
+Just feeling off lately.,struggle,generated
+Can’t seem to finish what I start.,struggle,generated
+I’m stuck and don’t know what to do.,struggle,generated
+Falling back into old habits.,struggle,generated
+Log out.,system_command,generated
+Turn off notifications.,system_command,generated
+Switch to dark mode.,system_command,generated
+Delete my account.,system_command,generated
+Clear my goal history.,system_command,generated
+Sync with my calendar.,system_command,generated
+Open my stats dashboard.,system_command,generated
+Restart onboarding.,system_command,generated
+Download my data.,system_command,generated
+Mute reminders for now.,system_command,generated
+I'm full of energy today!,user_energy,generated
+Totally drained right now.,user_energy,generated
+Feeling sluggish this morning.,user_energy,generated
+I’m alert and ready to go.,user_energy,generated
+Super low energy today.,user_energy,generated
+Barely made it out of bed.,user_energy,generated
+Feeling pretty energized.,user_energy,generated
+"Can’t focus, too tired.",user_energy,generated
+Refreshed after a good nap.,user_energy,generated
+Completely exhausted—need rest.,user_energy,generated
+Busy with work all day.,user_status,generated
+Just finished a long meeting.,user_status,generated
+At the gym right now.,user_status,generated
+"On a break, ready to plan.",user_status,generated
+"Just got home, finally some free time.",user_status,generated
+"Out with friends, won’t check in tonight.",user_status,generated
+Going on vacation next week.,user_status,generated
+Working overtime this week.,user_status,generated
+Sick and need rest.,user_status,generated
+"Just woke up, time to check in.",user_status,generated
+"Im not sure what I want to do for a goal, I just wanna feel better.", user_status;goal_create,written
+"I want to win an oscar, so help me a better actress", goal_create, written
