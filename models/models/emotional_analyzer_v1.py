@@ -190,47 +190,56 @@ def parse_labeled_text_file(filepath, label_map):
 # --- Script entry point ---
 def main():
     print("Downloading training file 1 . . .")
-    training_filepath1 = "C:\\Users\\trist\\OneDrive\\productivity_app\\models\\data\\emotions(1).csv"
+    training_filepath1 = "C:/Users/trist/OneDrive/Intentive/models/data/emotions(1).csv"
     df1 = pd.read_csv(training_filepath1)
     df1['labels'] = df1['labels'].map({0: 'sadness', 1: 'joy', 2: 'love', 3: 'anger', 4: 'fear'})
     df1['labels_list'] = df1['labels'].apply(lambda x: [x])
     print("Loaded training file 1.")
 
     print("Downloading training file 2 . . .")
-    training_filepath2 = "C:/Users/trist/OneDrive/productivity_app/models/data/tweet_emotions(2).csv"
+    training_filepath2 = "C:/Users/trist/OneDrive/Intentive/models/data/tweet_emotions(2).csv"
     df2 = pd.read_csv(training_filepath2)
     df2['labels_list'] = df2['labels'].apply(lambda x: [x])
     print("Loaded training file 2.")
 
     print("Downloading training file 3 . . .")
-    training_filepath3 = "C:/Users/trist/OneDrive/productivity_app/models/data/text(3).txt"
+    training_filepath3 = "C:/Users/trist/OneDrive/Intentive/models/data/text(3).txt"
     label_map = {0: 'joy', 1: 'fear', 2: 'anger', 3: 'sadness', 4: 'disgust', 5: 'shame', 6: 'guilt'}
     df3 = parse_labeled_text_file(training_filepath3, label_map)
     print("Loaded training file 3.")
 
     print("Downloading training file 4 . . .")
-    training_filepath4 = "C:/Users/trist/OneDrive/productivity_app/models/data/Combined_Data(4).csv"
+    training_filepath4 = "C:/Users/trist/OneDrive/Intentive/models/data/Combined_Data(4).csv"
     df4 = pd.read_csv(training_filepath4)
     df4['labels_list'] = df4['labels'].apply(lambda x: [x])
     print("Loaded training file 4.")
 
     print("Downloading training file 5 . . .")
-    training_filepath5 = "C:/Users/trist/OneDrive/productivity_app/models/data/combined_emotion(5).csv"
+    training_filepath5 = "C:/Users/trist/OneDrive/Intentive/models/data/combined_emotion(5).csv"
     df5 = pd.read_csv(training_filepath5)
     df5['labels_list'] = df5['labels'].apply(lambda x: [x])
     print("Loaded training file 5.")
 
     print("Downloading training file 6 . . .")
-    training_filepath6 = "C:/Users/trist/OneDrive/productivity_app/models/data/combined_sentiment_data(6).csv"
+    training_filepath6 = "C:/Users/trist/OneDrive/Intentive/models/data/combined_sentiment_data(6).csv"
     df6 = pd.read_csv(training_filepath6)
     df6['labels_list'] = df6['labels'].apply(lambda x: [x])
     print("Loaded training file 6.")
 
     print("Downloading training file 7 . . .")
-    training_filepath7 = "C:/Users/trist/OneDrive/productivity_app/models/data/emotion_dataset_raw(7).csv"
+    training_filepath7 = "C:/Users/trist/OneDrive/Intentive/models/data/emotion_dataset_raw(7).csv"
     df7 = pd.read_csv(training_filepath7)
     df7['labels_list'] = df7['labels'].apply(lambda x: [x])
     print("Loaded training file 7.")
+
+    print("df1 columns:", df1.columns)
+    print("df2 columns:", df2.columns)
+    print("df3 columns:", df3.columns)
+    print("df4 columns:", df4.columns)
+    print("df5 columns:", df5.columns)
+    print("df6 columns:", df6.columns)
+    print("df7 columns:", df7.columns)
+
 
     print("Combining Files . . .")
     df = pd.concat([df1[['input_text', 'labels_list']], df2[['input_text', 'labels_list']], df3[['input_text', 'labels_list']], df4[['input_text', 'labels_list']], df5[['input_text', 'labels_list']], df6[['input_text', 'labels_list']], df7[['input_text', 'labels_list']]], ignore_index=True)
