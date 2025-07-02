@@ -10,6 +10,7 @@ plugins {
 android {
     namespace = "com.example.intentive" // Replace with your actual package name
     compileSdk = 34
+    android.buildFeatures.buildConfig = true
 
     defaultConfig {
         applicationId = "com.example.intentive"
@@ -21,6 +22,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+
+        // Read API key from local.properties and add to BuildConfig
+        val apiKey: String? = project.findProperty("api.key") as String?
+        if (apiKey != null) {
+            buildConfigField("String", "API_KEY", "\"$apiKey\"")
+        } else {
+            buildConfigField("String", "API_KEY", "\"YOUR_API_KEY_NOT_FOUND\"")
         }
     }
 

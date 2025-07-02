@@ -13,8 +13,7 @@ class IntentiveApp : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        // Initialize location service with API key
-        // Note: Replace with your actual Google Maps API key
-        locationService.initialize("AIzaSyA_UmNb7WRVG87At3OotBxomvQJ8muPQd0")
+        // Initialize location service with API key from BuildConfig
+        locationService.initialize(BuildConfig.API_KEY)
     }
 }
