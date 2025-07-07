@@ -19,20 +19,20 @@ bert_model = BertModel.from_pretrained("bert-base-uncased")
 bert_model.eval()  # Disables dropout of nerual nodes
 
 
-def text_to_bert_tokens(text_list, tokenizer, model):
-    """
-    Purpose: Take a list of text, tokenize it, and runit through a Bert model
-    Returns: A 768 size vector for each text in the list
-    """
-    embeddings = []
-    for text in tqdm(text_list):
-        inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=128)
-        with torch.no_grad():
-            outputs = model(**inputs)
-            cls_embedding = outputs.last_hidden_state[:, 0, :]  # get [CLS] token representation
-        embeddings.append(cls_embedding.squeeze().numpy())
-    return embeddings
+def text_to_bert_tokens(texts, tokenizer, bert_model, batch_size=64, device="cpu"):
+    all_embeddings = []
 
+    for i in range(0, len(texts), batch_size):
+        batch_texts = texts[i:i + batch_size]
+        print(f"Encoding batch {i // batch_size + 1} / {len(texts) // batch_size + 1}")  # Add this
+        inputs = tokenizer(batch_texts, return_tensors="pt", truncation=True, padding=True, max_length=128).to(device)
+
+        with torch.no_grad():
+            outputs = bert_model(**inputs)
+            embeddings = outputs.last_hidden_state[:, 0, :].detach().cpu()
+            all_embeddings.append(embeddings)
+
+    return torch.cat(all_embeddings, dim=0)
 
 class GoalIntentDataset(Dataset):
     def __init__(self, features, labels):

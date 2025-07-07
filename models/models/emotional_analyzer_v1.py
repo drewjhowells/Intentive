@@ -15,10 +15,14 @@ from sklearn.metrics import classification_report
 from transformers import BertTokenizer, BertModel
 from torch.utils.data import Dataset
 from input_classifier_v1 import text_to_bert_tokens
-import torch.nn.functional as F
+import torch
 from torch import sigmoid
-from sklearn.metrics import classification_report
+import torch.nn.functional as F
 from tqdm import tqdm
+from torch.utils.data import DataLoader
+
+device = torch.device("cpu")
+
 
 
 # --- Dataset wrapper ---
@@ -63,6 +67,30 @@ class EmotionalClassifier(nn.Module):
         return model
 
 
+class TextDataset(Dataset):
+    def __init__(self, texts):
+        self.texts = texts
+    def __len__(self):
+        return len(self.texts)
+    def __getitem__(self, idx):
+        return self.texts[idx]
+
+def generate_embeddings(texts, tokenizer, bert_model, batch_size=32):
+    dataset = TextDataset(texts)
+    loader = DataLoader(dataset, batch_size=batch_size)
+    all_embeddings = []
+
+    for batch_texts in tqdm(loader, desc="Generating BERT Embeddings"):
+        inputs = tokenizer(batch_texts, padding=True, truncation=True, return_tensors="pt").to(device)
+        with torch.no_grad():
+            outputs = bert_model(**inputs)
+            cls_embeddings = outputs.last_hidden_state[:, 0, :]  # CLS token
+            all_embeddings.append(cls_embeddings.cpu())
+
+    return torch.cat(all_embeddings, dim=0).numpy()
+
+
+
 # --- High-level analyzer ---
 class EmotionAnalyzer:
     def __init__(self, input_dim: int = 768, hidden_dim: int = 256):
@@ -77,9 +105,9 @@ class EmotionAnalyzer:
         print(f"Detected emotion classes: {classes}")
 
         tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-        bert_model = BertModel.from_pretrained("bert-base-uncased").eval()
-        embeddings = text_to_bert_tokens(texts, tokenizer, bert_model)
-        X = np.array(embeddings)
+        bert_model = BertModel.from_pretrained("bert-base-uncased").to(device).eval()
+        X = generate_embeddings(texts, tokenizer, bert_model)
+
 
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.8, random_state=42)
         train_ds = EmotionalIntentDataset(X_train, Y_train)
@@ -87,7 +115,7 @@ class EmotionAnalyzer:
         train_loader = torch.utils.data.DataLoader(train_ds, batch_size=batch_size, shuffle=True)
         test_loader  = torch.utils.data.DataLoader(test_ds, batch_size=batch_size)
 
-        self.model = EmotionalClassifier(input_dim=self.input_dim, hidden_dim=self.hidden_dim, output_dim=len(classes))
+        self.model = EmotionalClassifier(input_dim=self.input_dim, hidden_dim=self.hidden_dim, output_dim=len(classes)).to(device)
         criterion = nn.BCEWithLogitsLoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
 
@@ -96,6 +124,7 @@ class EmotionAnalyzer:
             total_loss = 0.0
             print(f"\n--- Epoch {epoch+1}/{epochs} ---")
             for batch_X, batch_y in tqdm(train_loader, desc=f"Training Epoch {epoch+1}"):
+                batch_X, batch_y = batch_X.to(device), batch_y.to(device)
                 optimizer.zero_grad()
                 preds = self.model(batch_X)
                 loss = criterion(preds, batch_y)
@@ -107,37 +136,15 @@ class EmotionAnalyzer:
             self.evaluate(test_loader, label_names=classes)
         return X_test, Y_test
 
-    def evaluate(self, test_loader, label_names=None):
-        if self.model is None:
-            raise RuntimeError("Model has not been trained or loaded.")
-        if label_names is None:
-            label_names = self.mlb.classes_
-
-        all_preds, all_targets = [], []
-        self.model.eval()
-        with torch.no_grad():
-            for batch_X, batch_y in test_loader:
-                logits = self.model(batch_X)
-                probs = sigmoid(logits).cpu().numpy()
-                all_preds.append(probs)
-                all_targets.append(batch_y.cpu().numpy())
-
-        all_preds = np.vstack(all_preds)
-        all_targets = np.vstack(all_targets)
-        bin_preds = (all_preds > 0.5).astype(int)
-
-        print("\nEvaluation Report:")
-        print(classification_report(all_targets, bin_preds, target_names=label_names, zero_division=0))
-
     def predict(self, texts: list[str], threshold: float = 0.1) -> list[str]:
         if self.model is None:
             raise RuntimeError("Model has not been trained or loaded.")
         
         tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-        bert_model = BertModel.from_pretrained("bert-base-uncased").eval()
-        
-        embeddings = text_to_bert_tokens(texts, tokenizer, bert_model)
-        X = torch.tensor(np.array(embeddings), dtype=torch.float32)
+        bert_model = BertModel.from_pretrained("bert-base-uncased").to(device).eval()
+
+        embeddings = text_to_bert_tokens(texts, tokenizer, bert_model, device=device)
+        X = generate_embeddings(texts, tokenizer, bert_model)
         
         with torch.no_grad():
             probs = self.model(X).cpu().numpy()
@@ -149,12 +156,23 @@ class EmotionAnalyzer:
         
         return results
 
-
     def save(self, model_path: str, classes_path: str):
         torch.save({'state_dict': self.model.state_dict(), 'classes': list(self.mlb.classes_)}, model_path)
         with open(classes_path, 'w') as f:
             json.dump(list(self.mlb.classes_), f)
         print(f"Model saved to {model_path} and classes to {classes_path}")
+
+    def evaluate(self, data_loader, label_names=None):
+        self.model.eval()
+        all_preds, all_targets = [], []
+        with torch.no_grad():
+            for X, y in data_loader:
+                preds = sigmoid(self.model(X)).cpu().numpy()
+                all_preds.extend(preds)
+                all_targets.extend(y.cpu().numpy())
+        pred_binarized = (np.array(all_preds) >= 0.1).astype(int)
+        print(classification_report(all_targets, pred_binarized, target_names=label_names))
+
 
     @classmethod
     def load(cls, model_path: str, classes_path: str, input_dim: int = 768, hidden_dim: int = 256, device: str = 'cpu'):
@@ -245,17 +263,23 @@ def main():
     df = pd.concat([df1[['input_text', 'labels_list']], df2[['input_text', 'labels_list']], df3[['input_text', 'labels_list']], df4[['input_text', 'labels_list']], df5[['input_text', 'labels_list']], df6[['input_text', 'labels_list']], df7[['input_text', 'labels_list']]], ignore_index=True)
     df['labels_list'] = df['labels_list'].apply(lambda labels: [str(label) for label in labels])
 
+    df = df.sample(n=1000, random_state=42)
+
     print("Files combined.")
 
     print("Loading Model . . .")
     analyzer = EmotionAnalyzer()
     print("Training Model  . . .")
-    X_test, Y_test = analyzer.train(df['input_text'].tolist(), df['labels_list'].tolist(), epochs=1000)
+    X_test, Y_test = analyzer.train(df['input_text'].astype(str).tolist(), df['labels_list'].tolist(), epochs=1000)
     print("Saving Model . . .")
     analyzer.save('emotion_model.pth', 'emotion_classes.json')
     print("Model Saved.")
     print("Evaluating Model . . .")
-    analyzer.evaluate(X_test, Y_test)
+    X_tensor = torch.tensor(X_test, dtype=torch.float32)
+    Y_tensor = torch.tensor(Y_test, dtype=torch.float32)
+    test_loader = torch.utils.data.DataLoader(EmotionalIntentDataset(X_tensor, Y_tensor), batch_size=32)
+
+    analyzer.evaluate(test_loader)
     print("Model Evaluated.")
 
 if __name__ == "__main__":
