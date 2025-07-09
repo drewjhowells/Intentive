@@ -101,9 +101,10 @@ def generate_embeddings(texts, tokenizer, bert_model, batch_size=16, save_path=N
     total_batches = (num_samples + batch_size - 1) // batch_size
 
     existing_batches = sorted(
-        [f for f in os.listdir(os.path.dirname(save_path)) if f.startswith(os.path.basename(save_path) + "_batch_")],
+        [f for f in os.listdir(os.path.dirname(save_path)) if f.startswith(os.path.basename(save_path) + "_batch_") and not "_indices" in f],
         key=lambda f: int(f.split('_batch_')[-1].split('.')[0])
     )
+
     completed_batches = len(existing_batches)
 
     if completed_batches >= total_batches:
@@ -127,6 +128,9 @@ def generate_embeddings(texts, tokenizer, bert_model, batch_size=16, save_path=N
         if save_path:
             batch_save_path = f"{save_path}_batch_{batch_idx}.npy"
             np.save(batch_save_path, cls_embeddings.cpu().numpy())
+
+            indices_save_path = f"{save_path}_batch_{batch_idx}_indices.npy"
+            np.save(indices_save_path, np.arange(batch_idx * batch_size, min((batch_idx + 1) * batch_size, len(texts))))
         else:
             all_embeddings.append(cls_embeddings.cpu())
 
@@ -155,30 +159,45 @@ class EmotionAnalyzer:
         bert_model = BertModel.from_pretrained("bert-base-uncased").to(device).eval()
 
         embedding_dir = os.path.join(BASE_DIR, "models", "embeddings")
-        os.makedirs(embedding_dir, exist_ok=True)
         embedding_path = os.path.join(embedding_dir, "bert_embeddings")
+        os.makedirs(embedding_dir, exist_ok=True)
 
-        existing_batches = [f for f in os.listdir(embedding_dir) if f.startswith("bert_embeddings_batch_")]
-        if not existing_batches:
-            print("Generating and saving BERT embeddings...")
-            generate_embeddings(texts, tokenizer, bert_model, save_path=embedding_path)
-        else:
-            sorted_batches = sorted(existing_batches, key=lambda f: int(f.split('_batch_')[-1].split('.')[0]))
-            print(f"Reusing saved BERT embeddings from disk.")
-            print(f"Found {len(sorted_batches)} saved embedding batches. Starting from batch 0, using these files:")
-            for batch_file in sorted_batches:
-                print(f" - {batch_file}")
-
-        all_embeddings = []
-        embedding_files = sorted(
-            [f for f in os.listdir(embedding_dir) if f.startswith("bert_embeddings_batch_")],
+        existing_batches = sorted(
+            [f for f in os.listdir(embedding_dir) if f.startswith("bert_embeddings_batch_") and not "_indices" in f],
             key=lambda f: int(f.split('_batch_')[-1].split('.')[0])
         )
+        num_samples = len(texts)
+        batch_size = 16 
+        total_batches = (num_samples + batch_size - 1) // batch_size
+
+        if len(existing_batches) < total_batches:
+            print(f"Generating or resuming BERT embeddings... ({len(existing_batches)}/{total_batches} batches complete)")
+            generate_embeddings(texts, tokenizer, bert_model, save_path=embedding_path)
+        else:
+            print(f"All BERT embeddings already saved ({len(existing_batches)} batches). Skipping generation.")
+
+        all_embeddings = []
+        all_indices = []
+        print("Loading BERT embeddings from disk...")
+        embedding_files = sorted(
+        [f for f in os.listdir(embedding_dir) if f.startswith("bert_embeddings_batch_") and not "_indices" in f],
+        key=lambda f: int(f.split('_batch_')[-1].split('.')[0])
+    )
 
         for file in embedding_files:
             emb = np.load(os.path.join(embedding_dir, file))
             all_embeddings.append(emb)
+
+            indices_file = file.replace('.npy', '_indices.npy')
+            indices = np.load(os.path.join(embedding_dir, indices_file))
+            all_indices.extend(indices.tolist())
+
         X = np.concatenate(all_embeddings, axis=0)
+        Y = Y[all_indices]
+
+        print(f"X shape: {len(X)}")
+        print(f"Y shape: {len(Y)}")
+
 
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.8, random_state=42)
         train_ds = EmotionalIntentDataset(X_train, Y_train)
