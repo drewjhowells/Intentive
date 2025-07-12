@@ -1,0 +1,9 @@
+{
+  "name": "Tristan",
+  "goals": ["Stay focused", "Manage OCD", "Cook low-carb meals"],
+  "preferences": {
+    "tone": "supportive",
+    "format": "short_bullet"
+  }
+}
+
