@@ -20,6 +20,9 @@ import torch.nn.functional as F
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import os
+import time
+import gc
+import psutil
 
 device = torch.device("cpu")
 
@@ -94,11 +97,12 @@ class TextDataset(Dataset):
 
 def generate_embeddings(texts, tokenizer, bert_model, batch_size=16, save_path=None):
     dataset = TextDataset(texts)
-    loader = DataLoader(dataset, batch_size=batch_size)
-    all_embeddings = []
+    loader = DataLoader(dataset, batch_size=batch_size, num_workers=0)
 
     num_samples = len(texts)
     total_batches = (num_samples + batch_size - 1) // batch_size
+
+    all_embeddings = [] if save_path is None else None
 
     existing_batches = sorted(
         [f for f in os.listdir(os.path.dirname(save_path)) if f.startswith(os.path.basename(save_path) + "_batch_") and not "_indices" in f],
@@ -111,28 +115,39 @@ def generate_embeddings(texts, tokenizer, bert_model, batch_size=16, save_path=N
         print(f"All BERT embeddings already saved ({completed_batches} batches). Skipping generation.")
         return
 
-    print(f"Resuming BERT embedding generation from batch {completed_batches} of {total_batches} total batches.")
-    dataset = TextDataset(texts)
-    loader = DataLoader(dataset, batch_size=batch_size)
-    all_embeddings = []
-
+    print(f"Resuming BERT embedding generation from batch {completed_batches + 1} of {total_batches} total batches.")
     for batch_idx, batch_texts in enumerate(tqdm(loader, desc="Generating BERT Embeddings")):
         if batch_idx < completed_batches:
             continue  # Skip already saved batches
 
-        inputs = tokenizer(batch_texts, padding=True, truncation=True, return_tensors="pt").to(device)
+        batch_start = time.time()
+
+        # Tokenize and move to device
+        inputs = tokenizer(batch_texts, padding=True, truncation=True, return_tensors="pt", max_length=64).to(device)
+
         with torch.no_grad():
             outputs = bert_model(**inputs)
-            cls_embeddings = outputs.last_hidden_state[:, 0, :]
+            cls_embeddings = outputs.last_hidden_state[:, 0, :].detach().cpu()
 
         if save_path:
             batch_save_path = f"{save_path}_batch_{batch_idx}.npy"
-            np.save(batch_save_path, cls_embeddings.cpu().numpy())
-
             indices_save_path = f"{save_path}_batch_{batch_idx}_indices.npy"
-            np.save(indices_save_path, np.arange(batch_idx * batch_size, min((batch_idx + 1) * batch_size, len(texts))))
+            try:
+                np.save(batch_save_path, cls_embeddings.numpy())
+                np.save(indices_save_path, np.arange(batch_idx * batch_size, min((batch_idx + 1) * batch_size, len(texts))))
+            except Exception as e:
+                print(f"⚠️ Failed to save batch {batch_idx}: {e}")
         else:
-            all_embeddings.append(cls_embeddings.cpu())
+            all_embeddings.append(cls_embeddings)
+
+        # Memory cleanup
+        del inputs, outputs, cls_embeddings
+        gc.collect()
+
+        # Logging
+        if batch_idx % 5 == 0 or batch_idx == total_batches - 1:
+            mem = psutil.Process(os.getpid()).memory_info().rss / 1e6  # MB
+            print(f"[Batch {batch_idx+1}/{total_batches}] Memory: {mem:.1f} MB | Time: {time.time() - batch_start:.2f}s")
 
     if not save_path:
         return torch.cat(all_embeddings, dim=0).numpy()
