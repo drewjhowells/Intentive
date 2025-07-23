@@ -40,3 +40,10 @@ build/
 .DS_Store
 tmp/
 /java_pid28188.hprof
+
+*.npy
+*.pt
+*.csv
+bert_embeddings_batch_*.*
+embedding_perf.csv
+embeddings/
