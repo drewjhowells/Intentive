@@ -1,34 +1,31 @@
-# activity_guesser.py
+# backend/agents/activity_guesser.py
 from __future__ import annotations
 from typing import Dict, Any
-
-ALLOWED_LABELS = ["DRIVING", "AT_PLACE", "SCREEN_TIME", "FAST_FOOD_VISIT", "UNKNOWN"]
+import json
+from backend.models.gpt5nano_model import run_gpt5nano
 
 def guess(feature_bundle: Dict[str, Any], *, api_mode: bool = False, debug: bool = False) -> Dict[str, Any]:
-    """
-    Activity Guesser (LLM-ready).
-    - If api_mode=False: returns a dry-run stub (no API spend).
-    - If api_mode=True: delegates to backend.models.gpt4o_model.infer_behavior().
-    """
+    system_prompt = """You are an assistant that infers a user's most likely activity
+from summarized mobile telemetry. Return JSON with keys: label, confidence, rationale, evidence.
+Allowed labels: DRIVING, AT_PLACE, SCREEN_TIME, FAST_FOOD_VISIT, UNKNOWN.
+"""
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": json.dumps(feature_bundle, ensure_ascii=False)},
+    ]
+
     if not api_mode:
-        # DRY-RUN: no API usage, just a safe stub you can log/assert against.
         result = {
             "label": "UNKNOWN",
-            "confidence": 0.50,
+            "confidence": 0.5,
             "rationale": "api_mode=False (dry-run)",
-            "evidence": {"keys_seen": list(feature_bundle.keys())[:12]},
-            "version": "gpt4o_v0_dryrun",
+            "evidence": {"keys_seen": list(feature_bundle.keys())},
+            "version": "gpt5nano_v0_dryrun",
         }
         if debug:
             print(f"[GUESS.DRYRUN] {result}")
         return {"status": "ok", "guess": result}
 
-    # Live path (wired but only used if you flip api_mode=True)
-    from backend.models.gpt4o_model import infer_behavior
-    result = infer_behavior(context=feature_bundle, debug=debug)
-    # Optional sanity clamp
-    if result.get("label") not in ALLOWED_LABELS:
-        result["label"] = "UNKNOWN"
-    c = result.get("confidence", 0.0)
-    result["confidence"] = max(0.0, min(1.0, float(c)))
-    return {"status": "ok", "guess": result}
+    raw_output = run_gpt5nano(messages, debug=debug)
+    return {"status": "ok", "guess": raw_output}

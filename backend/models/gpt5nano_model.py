@@ -1,21 +1,21 @@
-# backend/models/gpt4o_model.py
+# backend/models/gpt5nano_model.py
 from __future__ import annotations
 from typing import List, Dict, Any
 import os
 # from openai import OpenAI  # Uncomment when wiring API
 
-def run_gpt4o(messages: List[Dict[str, str]], *, debug: bool = False) -> str:
+def run_gpt5nano(messages: List[Dict[str, str]], *, debug: bool = False) -> str:
     """
-    Minimal wrapper for GPT-4o.
+    Minimal wrapper for GPT-5-nano.
     Accepts a messages list, returns raw model output (string).
     """
     if debug:
-        print(f"[GPT4O] Messages: {messages}")
+        print(f"[GPT5-NANO] Messages: {messages}")
 
     # ---- LIVE CALL (uncomment to use API) ----
     # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     # resp = client.chat.completions.create(
-    #     model="gpt-4o",
+    #     model="gpt-5-nano",
     #     messages=messages,
     #     temperature=0.2
     # )
@@ -23,4 +23,4 @@ def run_gpt4o(messages: List[Dict[str, str]], *, debug: bool = False) -> str:
     # return output_text
 
     # Dry-run stub:
-    return '{"stub":"gpt4o call not active"}'
+    return '{"stub":"gpt5-nano call not active"}'
