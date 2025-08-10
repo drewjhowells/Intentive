@@ -90,3 +90,4 @@ action = decide(
     api_mode=False,
     debug=True
 )
+print(action)

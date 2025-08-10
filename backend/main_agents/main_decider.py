@@ -2,8 +2,6 @@
 from __future__ import annotations
 from typing import Dict, Any, Optional
 import json
-from backend.stores import behavior_store as beh
-from backend.main_agents.preference_manager import load_preferences
 from backend.models.gpt4o_model import run_gpt4o
 
 def decide(
@@ -35,6 +33,7 @@ If you return 'nudge', you must also return a reason and a message.
 If you return 'schedule', you must also return a reason and event details.
 If you return 'other', you must also return a reason and a message.
 If you return 'do_nothing', you must also return a reason.
+If you receive no information or insufficient information, return 'Not enough information' as the reason and 'do_nothing' as the action.
 Return JSON: action, reason, suggested_steps, message (as needed)."""
 
     messages = [
