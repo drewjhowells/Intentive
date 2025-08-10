@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict, Any, Optional
 import json
 from backend.stores import behavior_store as beh
+from backend.agents.preference_updater import load_preferences
 from backend.models.gpt4o_model import run_gpt4o
 
 def decide(
@@ -15,18 +16,20 @@ def decide(
     debug: bool = False,
 ) -> Dict[str, Any]:
     recent = beh.get_recent(user_id, since_minutes=120, limit=50, debug=debug)
+    learned_prefs = {"learned": load_preferences(debug=debug)}  # << auto-load
+    merged_prefs  = {**(prefs or {}), **learned_prefs}
+
     context = {
         "recent_behaviors": recent,
         "goals": goals or [],
         "calendar": calendar or {},
-        "preferences": prefs or {},
+        "preferences": merged_prefs,
     }
 
-    system_prompt = """You are an assistant that decides the most helpful next action for a user.
-Base your decision on recent behaviors, goals, calendar, and preferences.
+    system_prompt = """You decide the most helpful next action.
+Use recent behaviors, goals, calendar, and preferences (including learned).
 Allowed actions: 'nudge', 'do_nothing', 'schedule', 'other'.
-Return JSON with keys: action, reason, suggested_steps.
-"""
+Return JSON: action, reason, suggested_steps, message (optional)."""
 
     messages = [
         {"role": "system", "content": system_prompt},
