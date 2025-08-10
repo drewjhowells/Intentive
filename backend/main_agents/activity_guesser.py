@@ -1,7 +1,8 @@
 # backend/agents/activity_guesser.py
 from __future__ import annotations
 from typing import Dict, Any
-import json
+import json, os
+from datetime import datetime, timezone
 from backend.models.gpt5nano_model import run_gpt5nano
 
 def guess(feature_bundle: Dict[str, Any], *, api_mode: bool = False, debug: bool = False) -> Dict[str, Any]:
@@ -36,7 +37,33 @@ Example output:
         }
         if debug:
             print(f"[GUESS.DRYRUN] {result}")
+        log_activity(result, debug=debug)
         return {"status": "ok", "guess": result}
     if api_mode:
         raw_output = run_gpt5nano(messages, debug=debug)
-        return {"status": "ok", "guess": raw_output}
+        result = json.loads(raw_output)  # however you currently parse GPT output
+        log_activity(result, debug=debug)
+        return result
+    
+LOG_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)),  # go up from main_agents to backend
+    "stores",
+    "activity_log.jsonl"
+)
+
+def log_activity(activity_data: dict, debug: bool = False) -> None:
+    """
+    Append an activity guess to the log file with a UTC timestamp.
+    Uses JSON Lines format so it can be read incrementally.
+    """
+    entry = {
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "activity": activity_data
+    }
+    if debug:
+        print(f"[LOG_ACTIVITY] {entry}")
+    os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+    with open(LOG_PATH, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+    if debug:
+        print(f"[LOG_ACTIVITY] Activity logged to {LOG_PATH}")
