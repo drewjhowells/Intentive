@@ -2,7 +2,10 @@
 from __future__ import annotations
 from typing import List, Dict, Any
 import os
-# from openai import OpenAI  # Uncomment when wiring API
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 def run_gpt4o(messages: List[Dict[str, str]], *, debug: bool = False) -> str:
     """
@@ -12,15 +15,12 @@ def run_gpt4o(messages: List[Dict[str, str]], *, debug: bool = False) -> str:
     if debug:
         print(f"[GPT4O] Messages: {messages}")
 
-    # ---- LIVE CALL (uncomment to use API) ----
-    # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    # resp = client.chat.completions.create(
-    #     model="gpt-4o",
-    #     messages=messages,
-    #     temperature=0.2
-    # )
-    # output_text = resp.choices[0].message.content
-    # return output_text
-
-    # Dry-run stub:
-    return '{"stub":"gpt4o call not active"}'
+    # ---- LIVE CALL----
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY_4O"))
+    resp = client.chat.completions.create(
+        model="gpt-4o",
+        messages=messages,
+        temperature=0.2
+    )
+    output_text = resp.choices[0].message.content
+    return output_text
