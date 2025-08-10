@@ -1,11 +1,11 @@
 from __future__ import annotations
-import os, glob, sqlite3, sys
+import os, glob, sqlite3, sys, json
 from datetime import datetime, timedelta, timezone
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
 
-def gather_recent(stores_dir: str, minutes: int, debug: bool = False) -> dict:
+def gather_recent_payload(stores_dir: str, minutes: int, debug: bool = False) -> dict:
     """
     Minimal collector for Activity Guesser.
     - Scans all *.db in `stores_dir` (each file = category).
@@ -80,3 +80,60 @@ def gather_recent(stores_dir: str, minutes: int, debug: bool = False) -> dict:
                 print(f"Finished processing {category}")
 
     return payload
+
+def get_recent_activity(minutes: int = 60) -> dict:
+    """
+    Reads recent entries from backend/stores/activity_log.jsonl.
+    Returns a compact payload with only those entries from the last `minutes`.
+    """
+    log_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),  # go from main_agents to backend
+        "stores",
+        "activity_log.jsonl"
+    )
+
+    if not os.path.exists(log_path):
+        return {"window": None, "activities": []}
+
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(minutes=minutes)
+
+    recent_entries = []
+    with open(log_path, "r", encoding="utf-8") as f:
+        for line in f:
+            try:
+                entry = json.loads(line.strip())
+                ts = datetime.strptime(entry["timestamp"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                if ts >= since:
+                    recent_entries.append(entry)
+            except Exception:
+                continue  # skip malformed lines
+
+    return {
+        "window": {
+            "start": since.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "end": now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        },
+        "activities": recent_entries
+    }
+
+def get_recent_calendar(minutes: int = 60) -> dict:
+    """
+    Placeholder for future calendar retrieval logic.
+    Currently returns an empty dictionary.
+    """
+    return {"window": None, "events": []}  # Replace with actual calendar retrieval logic when implemented
+
+def get_goals():
+    """
+    Placeholder for future goal retrieval logic.
+    Currently returns an empty list.
+    """
+    return []  # Replace with actual goal retrieval logic when implemented
+
+def get_preferences():
+    """
+    Placeholder for future preferences retrieval logic.
+    Currently returns an empty dictionary.
+    """
+    return {}  # Replace with actual preferences retrieval logic when implemented

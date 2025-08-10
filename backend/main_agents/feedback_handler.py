@@ -1,7 +1,7 @@
 # backend/agents/feedback_handler.py
 from __future__ import annotations
 from typing import Dict, Any
-from backend.agents.preference_updater import update_preferences
+from backend.main_agents.preference_manager import update_preferences
 
 def handle_feedback(
     *,

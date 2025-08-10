@@ -4,8 +4,9 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from backend.main_agents.data_collector import send_data
-from backend.main import gather_recent
+from backend.main import gather_recent_payload, get_recent_activity, get_recent_calendar, get_goals, get_preferences
 from backend.main_agents.activity_guesser import guess
+from backend.main_agents.main_decider import decide
 
 # GPS test payload
 gps_payload = {
@@ -72,6 +73,20 @@ user_payload = {
 # send_data("USER", user_payload, debug=True)
 
 # Example usage of the activity guesser
-feature_bundle = gather_recent("stores", 60, debug=True)
-result = guess(feature_bundle, api_mode=False, debug=True)
-print(f"Activity Guess Result: {result}")
+# feature_bundle = gather_recent_payload("stores", 60, debug=True)
+# result = guess(feature_bundle, api_mode=False, debug=True)
+# print(f"Activity Guess Result: {result}")
+
+# Example usage of the main decider
+goals = get_goals()  # Placeholder for actual goal retrieval
+recent_calendar = get_recent_calendar()
+prefs = get_preferences()
+recent_activity = get_recent_activity()
+action = decide(
+    goals=goals,
+    recent_calendar=recent_calendar,
+    prefs=prefs,
+    recent_activity=recent_activity,
+    api_mode=False,
+    debug=True
+)
