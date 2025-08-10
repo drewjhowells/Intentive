@@ -19,8 +19,7 @@ def run_gpt4o(messages: List[Dict[str, str]], *, debug: bool = False) -> str:
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY_4O"))
     resp = client.chat.completions.create(
         model="gpt-4o",
-        messages=messages,
-        temperature=0.2
+        messages=messages
     )
     output_text = resp.choices[0].message.content
     return output_text
