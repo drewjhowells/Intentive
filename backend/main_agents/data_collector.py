@@ -10,7 +10,7 @@ Category = Literal["GPS", "PHONE", "USER"]
 
 def _validate_gps(payload: Dict[str, Any]) -> None:
     # TODO: add real checks later
-    return
+    return True
 
 def _validate_phone(payload: Dict[str, Any]) -> None:
     # TODO: add real checks later
@@ -27,29 +27,54 @@ VALIDATORS: dict[Category, Callable[[Dict[str, Any]], None]] = {
 }
 
 # --- empty stores (placeholders) ---
+GPS_DB_PATH = "stores/gps.db"
 
 def _store_gps(payload: Dict[str, Any], *, debug: bool) -> None:
-    DB_PATH = "gps.db"
-
-    def init_gps_store():
-        """Create a simple GPS table if it doesn't exist."""
-        with sqlite3.connect(DB_PATH) as con:
-            con.execute("""
-                CREATE TABLE IF NOT EXISTS gps (
-                    ts_utc TEXT,
-                    lat REAL,
-                    lon REAL
-                )
-            """)
-
-    def add_gps_entry(lat, lon):
-        """Add a GPS entry with current UTC timestamp."""
-        ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        with sqlite3.connect(DB_PATH) as con:
-            con.execute("INSERT INTO gps (ts_utc, lat, lon) VALUES (?, ?, ?)", (ts, lat, lon))
+    """
+    Parse lat/lon from payload and store in GPS table.
+    Expects payload["coords"] as a string "lat,lon" or two separate keys "lat" and "lon".
+    """
+    ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     
-    if debug:
-        print("[STORE] GPS payload accepted")
+    # Try combined string first
+    if "coords" in payload and isinstance(payload["coords"], str):
+        try:
+            lat_str, lon_str = payload["coords"].split(",")
+            lat, lon = float(lat_str.strip()), float(lon_str.strip())
+        except ValueError:
+            if debug:
+                print("Invalid coords format in payload:", payload["coords"])
+            return
+    # Try separate keys
+    elif "lat" in payload and "lon" in payload:
+        try:
+            lat, lon = float(payload["lat"]), float(payload["lon"])
+        except ValueError:
+            if debug:
+                print("Invalid lat/lon values in payload:", payload)
+            return
+    else:
+        if debug:
+            print("No GPS data found in payload")
+        return
+
+    with sqlite3.connect(GPS_DB_PATH) as con:
+        con.execute(
+            "INSERT INTO gps (ts_utc, lat, lon) VALUES (?, ?, ?)",
+            (ts, lat, lon)
+        )
+
+
+def init_gps_store():
+    """Create a simple GPS table if it doesn't exist."""
+    with sqlite3.connect(GPS_DB_PATH) as con:
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS gps (
+                ts_utc TEXT,
+                lat REAL,
+                lon REAL
+            )
+        """)
 
 def _store_phone(payload: Dict[str, Any], *, debug: bool) -> None:
     # TODO: write to DB/queue later
@@ -93,6 +118,11 @@ def send_data(category: Category, payload: Dict[str, Any], *, debug: bool = Fals
 
     # 2) store (no-op for now; prints only if debug)
     STORES[category](payload, debug=debug)
+    if category == "GPS" and "lat" in payload and "lon" in payload:
+        init_gps_store()  # Ensure GPS store is initialized
+        valid_gps = _validate_gps(payload)  # Validate GPS payload
+        if valid_gps:
+            _store_gps(payload, debug=debug)
 
     if debug:
         print(f"[DEBUG] {category} data stored.")
