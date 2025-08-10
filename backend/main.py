@@ -1,62 +1,82 @@
 from __future__ import annotations
-from typing import Dict, Any, Optional, Literal
+import os, glob, sqlite3, sys
+from datetime import datetime, timedelta, timezone
 
-from backend.main_agents.activity_guesser import guess
-from backend.main_agents.main_decider import decide
-from backend.main_agents.nudger import send_nudge
-from backend.main_agents.feedback_handler import handle_feedback
-from backend.stores.behaviors_store import record_behavior
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
-Category = Literal["GPS", "PHONE", "USER"]
 
-# 1) Log system info (PHONE/GPS/etc.)
-def log_system_info(user_id: str, category: str, data: Dict[str, Any], *, debug: bool = False):
-    feature_bundle = {"category": category, "data": data}  
-    guessed_activity = guess(feature_bundle, api_mode=False, debug=debug)
-    guess_obj = guessed_activity["guess"] if "guess" in guessed_activity else guessed_activity
-    record_behavior(user_id, {
-        "label": guess_obj.get("label", "UNKNOWN"),
-        "confidence": float(guess_obj.get("confidence", 0.5)),
-        "context": feature_bundle,
-        "evidence": guess_obj.get("evidence", {}),
-        "version": guess_obj.get("version", "gpt5nano_v0"),
-    }, debug=debug)
-    return {"status": "ok", "guess": guess_obj}
+def gather_recent(stores_dir: str, minutes: int, debug: bool = False) -> dict:
+    """
+    Minimal collector for Activity Guesser.
+    - Scans all *.db in `stores_dir` (each file = category).
+    - For each DB, finds tables and tries a simple time filter:
+        * If a table has 'timestamp' (point event), use BETWEEN.
+        * Else if it has both 'start_time' and 'end_time' (interval), use overlap.
+      (Overlap = any part of the event touches the window.)
+    - Returns one compact payload:
+        {
+          "window": {"start": ISO, "end": ISO},
+          "categories": {
+            "<category>": [
+              {"table": "<name>", "columns": [...], "rows": [ {col: val, ...}, ... ]},
+              ...
+            ],
+            ...
+          }
+        }
+    Notes:
+      - Times are ISO-8601 Z (UTC). Keep your DB times in ISO for string comparison.
+      - If a table has none of the expected time columns, it’s skipped (by design).
+    """
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(minutes=minutes)
+    to_iso = lambda dt: dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    window = {"start": to_iso(since), "end": to_iso(now)}
 
-# 2) Log user info (pass for now)
-def log_user_info(user_id: str, data: Dict[str, Any], *, debug: bool = False):
-    # Placeholder: ignore content, just ACK
-    if debug: print("[USER-INFO] pass-through (not stored yet)")
-    return {"status": "ok", "note": "pass"}
+    payload = {"window": window, "categories": {}}
 
-# 3) Get chatbox response (pass for now)
-def get_chatbox_response(user_id: str, prompt: str, *, debug: bool = False):
-    if debug: print("[CHATBOX] pass-through (not implemented)")
-    return {"status": "ok", "response": None}
+    for path in glob.glob(os.path.join(stores_dir, "*.db")):
+        category = os.path.splitext(os.path.basename(path))[0]  # e.g., "gps.db" -> "gps"
+        try:
+            con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+            con.row_factory = sqlite3.Row
+            if debug:
+                print(f"Processing {category} from {path}")
+        except Exception:
+            if debug:
+                print(f"Failed to open {path}: {sys.exc_info()[1]}")
+            continue  # unreadable db — ignore
 
-# 4) Evaluate & notify (better name than 'process_for_nudge')
-def evaluate_and_notify(
-    user_id: str,
-    *,
-    goals: Optional[list[dict]] = None,
-    calendar: Optional[dict] = None,
-    prefs: Optional[dict] = None,
-    event_details: Optional[Dict[str, Any]] = None,
-    api_mode_decide: bool = False,
-    debug: bool = False,
-):
-    dec = decide(
-        user_id,
-        goals=goals,
-        calendar=calendar,
-        prefs=prefs,
-        api_mode=api_mode_decide,
-        debug=debug
-    )
-    decision = dec["decision"]
-    nudged = send_nudge(decision, event_details=event_details, debug=debug)
-    return {"status": "ok", "decision": decision, "nudger_result": nudged}
+        try:
+            cat_items = []
+            for (tname,) in con.execute("SELECT name FROM sqlite_master WHERE type='table'"):
+                # Inspect columns once (PRAGMA = SQLite table schema)
+                cols = [r[1] for r in con.execute(f"PRAGMA table_info({tname})")]
+                has_ts = "timestamp" in cols
+                has_interval = ("start_time" in cols) and ("end_time" in cols)
 
-# Optional: feedback entrypoint (so FE can report user action)
-def record_feedback(feedback: Literal["accept","reject","ignore"], nudger_result: Dict[str, Any], *, debug: bool = False):
-    return handle_feedback(feedback=feedback, nudger_result=nudger_result, debug=debug)
+                if has_ts:
+                    q = f"SELECT * FROM {tname} WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC"
+                    cur = con.execute(q, (window["start"], window["end"]))
+                elif has_interval:
+                    q = f"SELECT * FROM {tname} WHERE NOT (end_time < ? OR start_time > ?) ORDER BY start_time ASC"
+                    cur = con.execute(q, (window["start"], window["end"]))
+                else:
+                    if debug:
+                        print(f"Skipping {tname} in {category}: no recognized time fields")
+                    continue  # no time fields we recognize
+
+                rows = [dict(r) for r in cur.fetchall()]
+                if rows:
+                    cat_items.append({"table": tname, "columns": cols, "rows": rows})
+                    if debug:
+                        print(f"Found {len(rows)} rows in {tname} for {category}")
+
+            if cat_items:
+                payload["categories"][category] = cat_items
+        finally:
+            con.close()
+            if debug:
+                print(f"Finished processing {category}")
+
+    return payload

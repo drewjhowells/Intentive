@@ -4,6 +4,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from main_agents.data_collector import send_data
+from backend.main import gather_recent
+from main_agents.activity_guesser import guess
 
 # GPS test payload
 gps_payload = {
@@ -62,7 +64,14 @@ user_payload = {
     },
 }
 
+
+
 send_data("GPS", gps_payload, debug=True)
 send_data("CALENDAR", calendar_payload, debug=True)
 send_data("SCREEN_USAGE", screen_payload, debug=True)
 send_data("USER", user_payload, debug=True)
+
+# Example usage of the activity guesser
+feature_bundle = gather_recent("stores", 60, debug=True)
+result = guess(feature_bundle, api_mode=False, debug=True)
+print(f"Activity Guess Result: {result}")
