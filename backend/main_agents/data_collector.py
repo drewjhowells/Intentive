@@ -27,7 +27,7 @@ VALIDATORS: dict[Category, Callable[[Dict[str, Any]], None]] = {
 # --- empty stores (placeholders) ---
 
 def _store_gps(payload: Dict[str, Any], *, debug: bool) -> None:
-    # TODO: write to DB/queue later
+    # TODO: write to DB/queue 
     if debug:
         print("[STORE] GPS payload accepted")
 
@@ -59,22 +59,22 @@ def send_data(category: Category, payload: Dict[str, Any], *, debug: bool = Fals
     """
     if category not in VALIDATORS:
         if debug:
-            print(f"[ROUTER] Unknown category: {category}")
+            print(f"[DEBUG] Unknown category: {category}")
         return {"status": "error", "reason": f"unknown_category:{category}"}
 
     if debug:
-        print(f"[ROUTER] category={category} received; running validator...")
+        print(f"[DEBUG] category={category} received; running validator...")
 
     # 1) validate (no-op for now)
     VALIDATORS[category](payload)
 
     if debug:
-        print(f"[ROUTER] category={category} validated; routing to store...")
+        print(f"[DEBUG] {category} Data Validated; routing to store...")
 
     # 2) store (no-op for now; prints only if debug)
     STORES[category](payload, debug=debug)
 
     if debug:
-        print(f"[ROUTER] category={category} done")
+        print(f"[DEBUG] {category} data stored.")
 
     return {"status": "ok", "category": category}
