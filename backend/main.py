@@ -5,15 +5,15 @@ from backend.main_agents.activity_guesser import guess
 from backend.main_agents.main_decider import decide
 from backend.main_agents.nudger import send_nudge
 from backend.main_agents.feedback_handler import handle_feedback
-from backend.stores.behavior_store import record_behavior
+from backend.stores.behaviors_store import record_behavior
 
 Category = Literal["GPS", "PHONE", "USER"]
 
 # 1) Log system info (PHONE/GPS/etc.)
-def log_system_info(user_id: str, data: Dict[str, Any], *, debug: bool = False):
-    feature_bundle = {"category": "PHONE", "data": data}  # treat GPS as part of system for now
-    g = guess(feature_bundle, api_mode=False, debug=debug)
-    guess_obj = g["guess"] if "guess" in g else g
+def log_system_info(user_id: str, category: str, data: Dict[str, Any], *, debug: bool = False):
+    feature_bundle = {"category": category, "data": data}  
+    guessed_activity = guess(feature_bundle, api_mode=False, debug=debug)
+    guess_obj = guessed_activity["guess"] if "guess" in guessed_activity else guessed_activity
     record_behavior(user_id, {
         "label": guess_obj.get("label", "UNKNOWN"),
         "confidence": float(guess_obj.get("confidence", 0.5)),
