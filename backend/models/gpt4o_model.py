@@ -5,7 +5,7 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+load_dotenv()
 
 def run_gpt4o(messages: List[Dict[str, str]], *, debug: bool = False) -> str:
     """
