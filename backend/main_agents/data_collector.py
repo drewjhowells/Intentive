@@ -1,6 +1,8 @@
 # data_collector.py
 from __future__ import annotations
 from typing import Dict, Any, Literal, Callable
+import sqlite3
+from datetime import datetime, timezone
 
 Category = Literal["GPS", "PHONE", "USER"]
 
@@ -27,7 +29,25 @@ VALIDATORS: dict[Category, Callable[[Dict[str, Any]], None]] = {
 # --- empty stores (placeholders) ---
 
 def _store_gps(payload: Dict[str, Any], *, debug: bool) -> None:
-    # TODO: write to DB/queue 
+    DB_PATH = "gps.db"
+
+    def init_gps_store():
+        """Create a simple GPS table if it doesn't exist."""
+        with sqlite3.connect(DB_PATH) as con:
+            con.execute("""
+                CREATE TABLE IF NOT EXISTS gps (
+                    ts_utc TEXT,
+                    lat REAL,
+                    lon REAL
+                )
+            """)
+
+    def add_gps_entry(lat, lon):
+        """Add a GPS entry with current UTC timestamp."""
+        ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        with sqlite3.connect(DB_PATH) as con:
+            con.execute("INSERT INTO gps (ts_utc, lat, lon) VALUES (?, ?, ?)", (ts, lat, lon))
+    
     if debug:
         print("[STORE] GPS payload accepted")
 
