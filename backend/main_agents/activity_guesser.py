@@ -7,7 +7,18 @@ from backend.models.gpt5nano_model import run_gpt5nano
 def guess(feature_bundle: Dict[str, Any], *, api_mode: bool = False, debug: bool = False) -> Dict[str, Any]:
     system_prompt = """You are an assistant that infers a user's most likely activity
 from summarized mobile telemetry. Return JSON with keys: label, confidence, rationale, evidence.
-Allowed labels: DRIVING, AT_PLACE, SCREEN_TIME, FAST_FOOD_VISIT, UNKNOWN.
+The label is a short string (e.g., "WORK", "LEISURE", "TRAVEL"). Confidence is a float [0.0, 1.0].
+Rationale is a human-readable explanation of the guess. Evidence is a JSON object with keys seen.
+Example output:
+{
+    "label": "WORK",
+    "confidence": 0.85,
+    "rationale": "User has recent calendar events and screen usage indicating work-related activity.",
+    "evidence": {
+        "keys_seen": ["calendar", "screen_usage"]
+    },
+    "version": "gpt5nano_v0"
+}
 """
 
     messages = [
