@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict, Any, Literal, Callable
 import sqlite3
 from datetime import datetime, timezone
+import os
 
 Category = Literal["GPS", "PHONE", "USER"]
 
@@ -27,13 +28,15 @@ VALIDATORS: dict[Category, Callable[[Dict[str, Any]], None]] = {
 }
 
 # --- empty stores (placeholders) ---
-GPS_DB_PATH = "stores/gps.db"
+GPS_DB_PATH = os.path.join(os.path.dirname(__file__), "..", "stores", "gps.db")
+GPS_DB_PATH = os.path.abspath(GPS_DB_PATH)
 
 def _store_gps(payload: Dict[str, Any], *, debug: bool) -> None:
     """
     Parse lat/lon from payload and store in GPS table.
     Expects payload["coords"] as a string "lat,lon" or two separate keys "lat" and "lon".
     """
+    init_gps_store()  # Ensure GPS store is initialized
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     
     # Try combined string first
@@ -65,8 +68,9 @@ def _store_gps(payload: Dict[str, Any], *, debug: bool) -> None:
         )
 
 
-def init_gps_store():
+def init_gps_store(debug: bool = False) -> None:
     """Create a simple GPS table if it doesn't exist."""
+    os.makedirs(os.path.dirname(GPS_DB_PATH), exist_ok=True)
     with sqlite3.connect(GPS_DB_PATH) as con:
         con.execute("""
             CREATE TABLE IF NOT EXISTS gps (
@@ -75,6 +79,8 @@ def init_gps_store():
                 lon REAL
             )
         """)
+    if debug:
+        print(f"[INIT] GPS store initialized at {GPS_DB_PATH}")
 
 def _store_phone(payload: Dict[str, Any], *, debug: bool) -> None:
     # TODO: write to DB/queue later
@@ -118,11 +124,6 @@ def send_data(category: Category, payload: Dict[str, Any], *, debug: bool = Fals
 
     # 2) store (no-op for now; prints only if debug)
     STORES[category](payload, debug=debug)
-    if category == "GPS" and "lat" in payload and "lon" in payload:
-        init_gps_store()  # Ensure GPS store is initialized
-        valid_gps = _validate_gps(payload)  # Validate GPS payload
-        if valid_gps:
-            _store_gps(payload, debug=debug)
 
     if debug:
         print(f"[DEBUG] {category} data stored.")
