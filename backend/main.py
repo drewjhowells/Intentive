@@ -124,12 +124,52 @@ def get_recent_calendar(minutes: int = 60) -> dict:
     """
     return {"window": None, "events": []}  # Replace with actual calendar retrieval logic when implemented
 
-def get_goals():
+def get_and_store_goals(goals=None, debug=False):
     """
-    Placeholder for future goal retrieval logic.
-    Currently returns an empty list.
+    Placeholder for receiving user goals from the frontend.
+    Currently accepts a goals list manually for testing.
+    Stores them in stores/goals.json with a timestamp.
+
+    Parameters:
+        goals (list): A list of goal strings from the user.
+        debug (bool): If True, prints debug output.
     """
-    return []  # Replace with actual goal retrieval logic when implemented
+    
+    # --- Placeholder: replace with frontend data fetching later ---
+    if goals is None:
+        # Simulated frontend input for testing
+        goals = [
+            "Finish weekly project report",
+            "Go for a 30-minute walk",
+            "Read 10 pages of a book"
+        ]
+    
+    # Prepare storage path
+    stores_dir = os.path.join(os.path.dirname(__file__), "stores")
+    os.makedirs(stores_dir, exist_ok=True)
+    goals_path = os.path.join(stores_dir, "goals.json")
+    
+    # Load existing goals (if any)
+    if os.path.exists(goals_path):
+        with open(goals_path, "r") as f:
+            data = json.load(f)
+    else:
+        data = []
+    
+    # Append new goals with timestamp
+    entry = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "goals": goals
+    }
+    data.append(entry)
+    
+    # Save back to file
+    with open(goals_path, "w") as f:
+        json.dump(data, f, indent=4)
+    
+    if debug:
+        print(f"[DEBUG] Stored goals: {entry}")
+        print(f"[DEBUG] Goals saved to {goals_path}")
 
 def get_preferences():
     """
