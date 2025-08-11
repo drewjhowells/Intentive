@@ -171,9 +171,32 @@ def get_and_store_goals(goals=None, debug=False):
         print(f"[DEBUG] Stored goals: {entry}")
         print(f"[DEBUG] Goals saved to {goals_path}")
 
-def get_preferences():
+def get_preferences(days_back: int = 7, *, debug: bool = False):
     """
-    Placeholder for future preferences retrieval logic.
-    Currently returns an empty dictionary.
+    Load all preferences within the last `days_back` days.
+    Reads from preferences.json via load_preferences().
+    Returns a list of matching entries.
     """
-    return {}  # Replace with actual preferences retrieval logic when implemented
+    all_prefs = load_preferences(debug=debug)
+    if not all_prefs:
+        return []
+
+    cutoff = datetime.utcnow() - timedelta(days=days_back)
+    recent = []
+
+    for entry in all_prefs:
+        ts = entry.get("context", {}).get("timestamp")
+        if not ts:
+            continue
+        try:
+            dt = datetime.fromisoformat(ts)
+        except ValueError:
+            # Ignore bad timestamps
+            continue
+        if dt >= cutoff:
+            recent.append(entry)
+
+    if debug:
+        print(f"[GET-PREFS] Found {len(recent)} preferences in last {days_back} days.")
+
+    return recent
