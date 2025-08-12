@@ -1,6 +1,0 @@
-*.npy
-*.pt
-*.csv
-bert_embeddings_batch_*.*
-embedding_perf.csv
-embeddings/

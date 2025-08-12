@@ -47,3 +47,5 @@ tmp/
 bert_embeddings_batch_*.*
 embedding_perf.csv
 embeddings/
+
+.env
