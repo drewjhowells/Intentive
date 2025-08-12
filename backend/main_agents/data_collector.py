@@ -1,36 +1,45 @@
 # data_collector.py
 """
-Minimal Data Collector shell with category-based validators and stores.
+Minimal, single-DB Data Collector.
 
-Supported categories:
-  - GPS: expects {"coords": "lat,lon"} or {"lat": float, "lon": float}
-  - CALENDAR: expects {"events": [ {title,start_time,end_time,location?,description?}, ... ]}
-    • times are ISO 8601 strings in UTC (e.g., "2025-08-10T14:00:00Z")
-  - SCREEN_USAGE: expects {"sessions": [ {app_name,package_name,start_time,end_time?,duration_seconds?}, ... ]}
-    • if end_time missing but duration provided, we store duration; if duration missing but start+end provided, we compute duration
-  - USER: accepts any JSON payload and stores it as a single JSON blob for auditing/debugging
+What this does
+--------------
+- Uses ONE SQLite database (stores.db) with multiple tables.
+- Every record carries a shared `flow_id` (groups events that belong to the same end-to-end run).
+- Each table has its own `local_id` (INTEGER PRIMARY KEY) so you can distinguish multiple rows
+  for the same flow (e.g., many calendar events in one flow).
+- Every row has `ts_utc` so you can measure latency later.
 
-All stores are lightweight SQLite DBs created on demand under ../stores/ .
-Each store logs with ts_utc (collector insert time) to keep ingestion consistent.
+Public API
+----------
+- init_db(debug=False): create tables/indexes if missing.
+- validate(category, payload): light checks for required fields & timestamp formats.
+- send_data(category, payload, flow_id=None, debug=False): validate + store into the right table(s).
+  If flow_id is None, we auto-generate one.
 
-Notes:
-- Validators are intentionally permissive right now (light checks + helpful debug prints).
-- Timestamps are expected as ISO 8601; a trailing 'Z' will be normalized to +00:00.
+Notes
+-----
+- Keep payloads small and structured. We only store the necessary fields right now.
+- All times are ISO 8601. If you add 'Z', we normalize to +00:00.
 """
+
 from __future__ import annotations
-from typing import Dict, Any, Literal, Callable, List, Tuple
+from typing import Dict, Any, Literal, Callable, List, Tuple, Optional
 import sqlite3
 from datetime import datetime, timezone
 import os
 import json
+import uuid
 
 Category = Literal["GPS", "CALENDAR", "SCREEN_USAGE", "USER"]
 
 # ----------------------- helpers -----------------------
 
+_BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "stores"))
+DB_PATH = os.path.join(_BASE, "stores.db")
+
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
 
 def _iso_to_dt(s: str) -> datetime:
     """Parse ISO 8601 strings; supports trailing 'Z'. Raises ValueError if invalid."""
@@ -41,24 +50,108 @@ def _iso_to_dt(s: str) -> datetime:
         s = s[:-1] + "+00:00"
     return datetime.fromisoformat(s)
 
+def _ensure_dir() -> None:
+    os.makedirs(_BASE, exist_ok=True)
 
-# ----------------------- validators -----------------------
+def _gen_flow_id() -> str:
+    """Stable enough for dev; replace with your own if needed."""
+    return f"flow_{uuid.uuid4().hex[:12]}"
+
+# ----------------------- init (one DB) -----------------------
+
+def init_db(debug: bool = False) -> None:
+    """
+    Create all tables and indexes in a single SQLite database.
+    Minimal columns only; every table has:
+      - local_id (INTEGER PRIMARY KEY)
+      - flow_id (TEXT, indexed)
+      - ts_utc (TEXT, ISO 8601 insert time)
+    """
+    _ensure_dir()
+    with sqlite3.connect(DB_PATH) as con:
+        cur = con.cursor()
+
+        # Flows registry: helpful for quick day queries and existence checks
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS flows (
+            flow_id    TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS gps (
+            local_id INTEGER PRIMARY KEY,
+            flow_id  TEXT NOT NULL,
+            ts_utc   TEXT NOT NULL,
+            lat      REAL NOT NULL,
+            lon      REAL NOT NULL
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            local_id   INTEGER PRIMARY KEY,
+            flow_id    TEXT NOT NULL,
+            ts_utc     TEXT NOT NULL,
+            event_id   TEXT,         -- optional external id
+            title      TEXT NOT NULL,
+            start_utc  TEXT NOT NULL,
+            end_utc    TEXT NOT NULL
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS screen_usage_sessions (
+            local_id         INTEGER PRIMARY KEY,
+            flow_id          TEXT NOT NULL,
+            ts_utc           TEXT NOT NULL,
+            app_name         TEXT NOT NULL,
+            package_name     TEXT NOT NULL,
+            start_utc        TEXT NOT NULL,
+            end_utc          TEXT,         -- may be empty if unknown
+            duration_seconds INTEGER       -- may be null if unknown
+        )
+        """)
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_events (
+            local_id INTEGER PRIMARY KEY,
+            flow_id  TEXT NOT NULL,
+            ts_utc   TEXT NOT NULL,
+            data_json TEXT NOT NULL        -- opaque debug/audit blob
+        )
+        """)
+
+        # Indexes for fast reconstruction by flow and time windows
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_gps_flow ON gps(flow_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_cal_flow ON calendar_events(flow_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_screen_flow ON screen_usage_sessions(flow_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_user_flow ON user_events(flow_id)")
+
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_gps_ts ON gps(ts_utc)")
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_cal_ts ON calendar_events(ts_utc)")
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_screen_ts ON screen_usage_sessions(ts_utc)")
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_user_ts ON user_events(ts_utc)")
+
+    if debug:
+        print(f"[INIT] Stores initialized at {DB_PATH}")
+
+# ----------------------- validators (minimal) -----------------------
 
 def _validate_gps(payload: Dict[str, Any]) -> None:
     if not isinstance(payload, dict):
         raise ValueError("GPS payload must be an object")
     if "coords" in payload:
         if not isinstance(payload["coords"], str) or "," not in payload["coords"]:
-            raise ValueError("GPS.coords must be a 'lat,lon' string")
-        # basic float check
+            raise ValueError("GPS.coords must be 'lat,lon' string")
         lat_str, lon_str = payload["coords"].split(",", 1)
         float(lat_str); float(lon_str)
         return
     if "lat" in payload and "lon" in payload:
-        float(payload["lat"]); float(payload["lon"])  # raises on invalid
+        float(payload["lat"]); float(payload["lon"])
         return
-    raise ValueError("GPS payload requires either 'coords' or 'lat'+'lon'")
-
+    raise ValueError("GPS requires 'coords' or 'lat'+'lon'")
 
 def _validate_calendar(payload: Dict[str, Any]) -> None:
     if not isinstance(payload, dict):
@@ -66,17 +159,14 @@ def _validate_calendar(payload: Dict[str, Any]) -> None:
     events = payload.get("events")
     if not isinstance(events, list):
         raise ValueError("CALENDAR.events must be a list")
-    for idx, ev in enumerate(events):
+    for i, ev in enumerate(events):
         if not isinstance(ev, dict):
-            raise ValueError(f"CALENDAR.events[{idx}] must be an object")
-        # required
+            raise ValueError(f"CALENDAR.events[{i}] must be an object")
         for k in ("title", "start_time", "end_time"):
             if k not in ev:
-                raise ValueError(f"CALENDAR.events[{idx}] missing '{k}'")
-        # time sanity
-        _iso_to_dt(ev["start_time"])  # will raise on invalid
-        _iso_to_dt(ev["end_time"])    # will raise on invalid
-
+                raise ValueError(f"CALENDAR.events[{i}] missing '{k}'")
+        _iso_to_dt(ev["start_time"])
+        _iso_to_dt(ev["end_time"])
 
 def _validate_screen_usage(payload: Dict[str, Any]) -> None:
     if not isinstance(payload, dict):
@@ -84,25 +174,21 @@ def _validate_screen_usage(payload: Dict[str, Any]) -> None:
     sessions = payload.get("sessions")
     if not isinstance(sessions, list):
         raise ValueError("SCREEN_USAGE.sessions must be a list")
-    for idx, s in enumerate(sessions):
+    for i, s in enumerate(sessions):
         if not isinstance(s, dict):
-            raise ValueError(f"SCREEN_USAGE.sessions[{idx}] must be an object")
+            raise ValueError(f"SCREEN_USAGE.sessions[{i}] must be an object")
         for k in ("app_name", "package_name", "start_time"):
             if k not in s:
-                raise ValueError(f"SCREEN_USAGE.sessions[{idx}] missing '{k}'")
-        # validate time/duration if present
-        _iso_to_dt(s["start_time"])  # raises on invalid
-        if "end_time" in s and s["end_time"] is not None:
-            _iso_to_dt(s["end_time"])  # raises
+                raise ValueError(f"SCREEN_USAGE.sessions[{i}] missing '{k}'")
+        _iso_to_dt(s["start_time"])
+        if "end_time" in s and s["end_time"] not in (None, ""):
+            _iso_to_dt(s["end_time"])
         if "duration_seconds" in s and s["duration_seconds"] is not None:
-            int(s["duration_seconds"])  # raises
-
+            int(s["duration_seconds"])
 
 def _validate_user(payload: Dict[str, Any]) -> None:
-    # Intentionally permissive; we just store the JSON blob
     if not isinstance(payload, dict):
         raise ValueError("USER payload must be an object")
-
 
 VALIDATORS: dict[Category, Callable[[Dict[str, Any]], None]] = {
     "GPS": _validate_gps,
@@ -111,224 +197,130 @@ VALIDATORS: dict[Category, Callable[[Dict[str, Any]], None]] = {
     "USER": _validate_user,
 }
 
-# ----------------------- stores (SQLite) -----------------------
-_BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "stores"))
-GPS_DB_PATH = os.path.join(_BASE, "gps.db")
-CAL_DB_PATH = os.path.join(_BASE, "calendar.db")
-SCREEN_DB_PATH = os.path.join(_BASE, "screen_usage.db")
-USER_DB_PATH = os.path.join(_BASE, "user.db")
+# ----------------------- store (single DB) -----------------------
 
+def _ensure_flow(con: sqlite3.Connection, flow_id: str) -> None:
+    con.execute(
+        "INSERT OR IGNORE INTO flows(flow_id, created_at) VALUES (?, ?)",
+        (flow_id, _utc_now_iso()),
+    )
 
-def init_gps_store(debug: bool = False) -> None:
-    os.makedirs(_BASE, exist_ok=True)
-    with sqlite3.connect(GPS_DB_PATH) as con:
-        con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS gps (
-                ts_utc TEXT,
-                lat REAL,
-                lon REAL
-            )
-            """
-        )
-    if debug:
-        print(f"[INIT] GPS store initialized at {GPS_DB_PATH}")
-
-
-def init_calendar_store(debug: bool = False) -> None:
-    os.makedirs(_BASE, exist_ok=True)
-    with sqlite3.connect(CAL_DB_PATH) as con:
-        con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS calendar (
-                ts_utc TEXT,
-                event_id TEXT,
-                title TEXT,
-                start_utc TEXT,
-                end_utc TEXT,
-                location TEXT,
-                description TEXT
-            )
-            """
-        )
-    if debug:
-        print(f"[INIT] CALENDAR store initialized at {CAL_DB_PATH}")
-
-
-def init_screen_usage_store(debug: bool = False) -> None:
-    os.makedirs(_BASE, exist_ok=True)
-    with sqlite3.connect(SCREEN_DB_PATH) as con:
-        con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS screen_usage (
-                ts_utc TEXT,
-                app_name TEXT,
-                package_name TEXT,
-                start_utc TEXT,
-                end_utc TEXT,
-                duration_seconds INTEGER
-            )
-            """
-        )
-    if debug:
-        print(f"[INIT] SCREEN_USAGE store initialized at {SCREEN_DB_PATH}")
-
-
-def init_user_store(debug: bool = False) -> None:
-    os.makedirs(_BASE, exist_ok=True)
-    with sqlite3.connect(USER_DB_PATH) as con:
-        con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS user (
-                ts_utc TEXT,
-                data_json TEXT
-            )
-            """
-        )
-    if debug:
-        print(f"[INIT] USER store initialized at {USER_DB_PATH}")
-
-
-def _store_gps(payload: Dict[str, Any], *, debug: bool) -> None:
-    """Store a single GPS reading."""
-    init_gps_store(debug=False)
+def _store_gps(con: sqlite3.Connection, flow_id: str, payload: Dict[str, Any]) -> int:
     ts = _utc_now_iso()
-    if "coords" in payload and isinstance(payload["coords"], str):
+    if "coords" in payload:
         lat_str, lon_str = payload["coords"].split(",", 1)
         lat, lon = float(lat_str.strip()), float(lon_str.strip())
-    elif "lat" in payload and "lon" in payload:
-        lat, lon = float(payload["lat"]), float(payload["lon"])
     else:
-        if debug:
-            print("[STORE][GPS] No GPS data found in payload")
-        return
-    with sqlite3.connect(GPS_DB_PATH) as con:
-        con.execute(
-            "INSERT INTO gps (ts_utc, lat, lon) VALUES (?, ?, ?)",
-            (ts, lat, lon),
-        )
-    if debug:
-        print("[STORE][GPS] Row inserted.")
+        lat, lon = float(payload["lat"]), float(payload["lon"])
+    cur = con.execute(
+        "INSERT INTO gps(flow_id, ts_utc, lat, lon) VALUES(?, ?, ?, ?)",
+        (flow_id, ts, lat, lon),
+    )
+    return cur.lastrowid
 
-
-def _store_calendar(payload: Dict[str, Any], *, debug: bool) -> None:
-    """Store calendar events list."""
-    init_calendar_store(debug=False)
+def _store_calendar(con: sqlite3.Connection, flow_id: str, payload: Dict[str, Any]) -> int:
     ts = _utc_now_iso()
-    events: List[Dict[str, Any]] = payload.get("events", [])
-    if not events:
-        if debug:
-            print("[STORE][CALENDAR] No events found.")
-        return
-    rows: List[Tuple[str, str, str, str, str, str, str]] = []
+    events = payload.get("events", [])
+    rows = []
     for ev in events:
-        title = str(ev.get("title", ""))
-        start = str(ev.get("start_time", ""))
-        end = str(ev.get("end_time", ""))
-        location = str(ev.get("location", ""))
-        description = str(ev.get("description", ""))
-        event_id = str(ev.get("event_id", ""))  # optional, helps with de-dup later
-        rows.append((ts, event_id, title, start, end, location, description))
-    with sqlite3.connect(CAL_DB_PATH) as con:
-        con.executemany(
-            """
-            INSERT INTO calendar (ts_utc, event_id, title, start_utc, end_utc, location, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            rows,
-        )
-    if debug:
-        print(f"[STORE][CALENDAR] Inserted {len(rows)} event(s).")
+        rows.append((
+            flow_id, ts,
+            str(ev.get("event_id", "")),
+            str(ev.get("title", "")),
+            str(ev.get("start_time", "")),
+            str(ev.get("end_time", "")),
+        ))
+    if not rows:
+        return 0
+    con.executemany(
+        """INSERT INTO calendar_events(flow_id, ts_utc, event_id, title, start_utc, end_utc)
+           VALUES(?, ?, ?, ?, ?, ?)""",
+        rows
+    )
+    return len(rows)
 
-
-def _store_screen_usage(payload: Dict[str, Any], *, debug: bool) -> None:
-    """Store screen/app usage sessions list."""
-    init_screen_usage_store(debug=False)
+def _store_screen_usage(con: sqlite3.Connection, flow_id: str, payload: Dict[str, Any]) -> int:
     ts = _utc_now_iso()
-    sessions: List[Dict[str, Any]] = payload.get("sessions", [])
-    if not sessions:
-        if debug:
-            print("[STORE][SCREEN_USAGE] No sessions found.")
-        return
-    rows: List[Tuple[str, str, str, str, str, int]] = []
+    sessions = payload.get("sessions", [])
+    rows = []
     for s in sessions:
-        app_name = str(s.get("app_name", ""))
-        pkg = str(s.get("package_name", ""))
         start = str(s.get("start_time", ""))
         end = s.get("end_time")
-        duration = s.get("duration_seconds")
-        # compute duration if needed and possible
-        if duration is None and end:
+        dur = s.get("duration_seconds")
+        # compute duration if not provided but end exists
+        if dur is None and end not in (None, ""):
             try:
                 dt_start = _iso_to_dt(start)
                 dt_end = _iso_to_dt(str(end))
-                duration = max(0, int((dt_end - dt_start).total_seconds()))
+                dur = max(0, int((dt_end - dt_start).total_seconds()))
             except Exception:
-                duration = None
-        if end is None and duration is not None:
-            end = ""  # keep empty if unknown; we still store duration
-        rows.append((ts, app_name, pkg, start, str(end) if end is not None else "", int(duration) if duration is not None else None))
+                dur = None
+        if end is None:
+            end = ""  # keep empty string if unknown
+        rows.append((
+            flow_id, ts,
+            str(s.get("app_name", "")),
+            str(s.get("package_name", "")),
+            start,
+            str(end),
+            int(dur) if dur is not None else None
+        ))
+    if not rows:
+        return 0
+    con.executemany(
+        """INSERT INTO screen_usage_sessions(flow_id, ts_utc, app_name, package_name, start_utc, end_utc, duration_seconds)
+           VALUES(?, ?, ?, ?, ?, ?, ?)""",
+        rows
+    )
+    return len(rows)
 
-    with sqlite3.connect(SCREEN_DB_PATH) as con:
-        con.executemany(
-            """
-            INSERT INTO screen_usage (ts_utc, app_name, package_name, start_utc, end_utc, duration_seconds)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            rows,
-        )
-    if debug:
-        print(f"[STORE][SCREEN_USAGE] Inserted {len(rows)} session(s).")
-
-
-def _store_user(payload: Dict[str, Any], *, debug: bool) -> None:
-    """Store an opaque USER payload as a JSON blob for auditing/debugging."""
-    init_user_store(debug=False)
+def _store_user(con: sqlite3.Connection, flow_id: str, payload: Dict[str, Any]) -> int:
     ts = _utc_now_iso()
     blob = json.dumps(payload, ensure_ascii=False)
-    with sqlite3.connect(USER_DB_PATH) as con:
-        con.execute(
-            "INSERT INTO user (ts_utc, data_json) VALUES (?, ?)",
-            (ts, blob),
-        )
-    if debug:
-        print("[STORE][USER] JSON blob inserted.")
+    cur = con.execute(
+        "INSERT INTO user_events(flow_id, ts_utc, data_json) VALUES(?, ?, ?)",
+        (flow_id, ts, blob),
+    )
+    return cur.lastrowid
 
-
-STORES: dict[Category, Callable[[Dict[str, Any], bool], None]] = {
+STORES: dict[Category, Callable[[sqlite3.Connection, str, Dict[str, Any]], int]] = {
     "GPS": _store_gps,
     "CALENDAR": _store_calendar,
     "SCREEN_USAGE": _store_screen_usage,
     "USER": _store_user,
 }
 
-# ----------------------- public entrypoint -----------------------
+# ----------------------- public API -----------------------
 
-def send_data(category: Category, payload: Dict[str, Any], *, debug: bool = False) -> Dict[str, Any]:
-    """
-    Single entrypoint.
-    - Validates payload for the given category
-    - Stores it into a category-specific SQLite DB
-    - Returns a simple status dict
-    """
+def validate(category: Category, payload: Dict[str, Any]) -> None:
+    """Light validation per category."""
     if category not in VALIDATORS:
-        if debug:
-            print(f"[DEBUG] Unknown category: {category}")
-        return {"status": "error", "reason": f"unknown_category:{category}"}
-
-    if debug:
-        print(f"[DEBUG] category={category} received; running validator...")
-
-    # 1) validate
+        raise ValueError(f"unknown_category:{category}")
     VALIDATORS[category](payload)
 
+def send_data(category: Category, payload: Dict[str, Any], *, flow_id: Optional[str] = None, debug: bool = False) -> Dict[str, Any]:
+    """
+    Validate and store into a single DB.
+    - category: "GPS" | "CALENDAR" | "SCREEN_USAGE" | "USER"
+    - payload: category-shaped dict
+    - flow_id: optional; generated if None (returned to caller)
+    Returns: {"status":"ok","category":..., "flow_id":..., "rows": n}
+    """
     if debug:
-        print(f"[DEBUG] {category} Data Validated; routing to store...")
+        print(f"[DEBUG] category={category} received; validating...")
 
-    # 2) store
-    STORES[category](payload, debug=debug)
+    validate(category, payload)
+
+    init_db(debug=False)
+    if flow_id is None:
+        flow_id = _gen_flow_id()
+
+    rows = 0
+    with sqlite3.connect(DB_PATH) as con:
+        _ensure_flow(con, flow_id)
+        rows = STORES[category](con, flow_id, payload)
 
     if debug:
-        print(f"[DEBUG] {category} data stored.")
+        print(f"[DEBUG] {category} stored rows={rows} flow_id={flow_id}")
 
-    return {"status": "ok", "category": category}
+    return {"status": "ok", "category": category, "flow_id": flow_id, "rows": rows}
