@@ -200,4 +200,11 @@ def get_preferences(days_back: int = 7, *, debug: bool = False):
     if debug:
         print(f"[GET-PREFS] Found {len(recent)} preferences in last {days_back} days.")
 
-    return recent
+def get_goals():
+    """
+    Load all goals from stores/goals.json.
+    Returns a list of goals.    
+    """
+    goals_path = os.path.join(os.path.dirname(__file__), "stores", "goals.json")
+    if not os.path.exists(goals_path):
+        return []
