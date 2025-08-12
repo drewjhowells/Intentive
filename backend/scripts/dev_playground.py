@@ -7,6 +7,7 @@ from backend.main_agents.data_collector import send_data
 from backend.main import gather_recent_payload, get_recent_activity, get_recent_calendar, get_goals, get_preferences
 from backend.main_agents.activity_guesser import guess
 from backend.main_agents.main_decider import decide
+from backend.main_agents.preference_manager import update_preferences, load_preferences
 
 # GPS test payload
 gps_payload = {

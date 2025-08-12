@@ -25,7 +25,7 @@ from backend.main import (
 )
 from backend.main_agents.activity_guesser import guess
 from backend.main_agents.main_decider import decide
-from backend.agents.feedback_handler import handle_feedback
+from backend.main_agents.feedback_handler import handle_feedback
 from backend.main_agents.preference_manager import update_preferences, load_preferences
 
 # -------- Seed Payloads --------

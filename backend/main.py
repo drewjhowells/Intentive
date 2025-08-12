@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os, glob, sqlite3, sys, json
 from datetime import datetime, timedelta, timezone
+from backend.main_agents.preference_manager import update_preferences, load_preferences
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
